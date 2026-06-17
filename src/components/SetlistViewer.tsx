@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Song } from "../lib/types.ts";
 import type { Setlist, SetEntry } from "../lib/setlist.ts";
+import { encodeSetlist } from "../lib/setlist.ts";
 import { transposeKey } from "../lib/chordpro.ts";
 import { availableSections } from "../lib/song.ts";
 import { SongView } from "./SongView.tsx";
@@ -19,7 +20,12 @@ function orderLabels(entry: SetEntry, song: Song): string[] {
 
 export function SetlistViewer({ set, songs }: Props) {
   const byId = new Map(songs.map((s) => [s.id, s]));
-  const entries = set.entries.filter((e) => byId.has(e.songId));
+  // Editable working copy so cue notes can be tweaked live (persisted to the URL).
+  const [liveSet, setLiveSet] = useState<Setlist>(set);
+  const entries = liveSet.entries
+    .map((e, origIdx) => ({ e, origIdx }))
+    .filter(({ e }) => byId.has(e.songId));
+
   const [idx, setIdx] = useState(0);
   const [auto, setAuto] = useState(false);
   const [speed, setSpeed] = useState<number>(() => {
@@ -28,9 +34,8 @@ export function SetlistViewer({ set, songs }: Props) {
   });
 
   const n = entries.length;
-  const go = (next: number) => setIdx((p) => Math.min(n - 1, Math.max(0, next ?? p)));
+  const go = (next: number) => setIdx(() => Math.min(n - 1, Math.max(0, next)));
 
-  // Keyboard / foot-pedal nav: ←/→ and PageUp/PageDown move between songs.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
@@ -47,13 +52,11 @@ export function SetlistViewer({ set, songs }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [n]);
 
-  // New song -> jump to top and stop auto-scroll.
   useEffect(() => {
     window.scrollTo(0, 0);
     setAuto(false);
   }, [idx]);
 
-  // Auto-scroll loop.
   useEffect(() => {
     if (!auto) return;
     let raf = 0;
@@ -82,6 +85,20 @@ export function SetlistViewer({ set, songs }: Props) {
     }
   };
 
+  // Edit a cue note for the entry at original index; persist into the URL hash.
+  const setNote = (origIdx: number, note: string) => {
+    const next: Setlist = {
+      ...liveSet,
+      entries: liveSet.entries.map((e, j) => (j === origIdx ? { ...e, note } : e)),
+    };
+    setLiveSet(next);
+    try {
+      history.replaceState(null, "", "#s=" + encodeSetlist(next));
+    } catch {
+      /* ignore */
+    }
+  };
+
   const printSet = () => {
     const el = document.documentElement;
     const had = { dark: el.classList.contains("dark"), stage: el.classList.contains("stage") };
@@ -95,7 +112,7 @@ export function SetlistViewer({ set, songs }: Props) {
 
   if (n === 0) {
     return (
-      <Shell title={set.name || "Setlist"} date={set.date} onPrint={printSet}>
+      <Shell title={liveSet.name || "Setlist"} date={liveSet.date} onPrint={printSet}>
         <p className="text-slate-400">
           This shared setlist references songs that aren't in the library on this site.
         </p>
@@ -104,16 +121,15 @@ export function SetlistViewer({ set, songs }: Props) {
   }
 
   const i = Math.min(idx, n - 1);
-  const entry = entries[i];
+  const { e: entry, origIdx } = entries[i];
   const song = byId.get(entry.songId)!;
   const order = orderLabels(entry, song);
 
   return (
-    <Shell title={set.name || "Setlist"} date={set.date} onPrint={printSet}>
+    <Shell title={liveSet.name || "Setlist"} date={liveSet.date} onPrint={printSet}>
       <div className="no-print">
-        {/* Song nav */}
         <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
-          {entries.map((e, j) => {
+          {entries.map(({ e }, j) => {
             const s = byId.get(e.songId)!;
             return (
               <button
@@ -133,7 +149,6 @@ export function SetlistViewer({ set, songs }: Props) {
           })}
         </div>
 
-        {/* Auto-scroll controls */}
         <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
           <button
             onClick={() => setAuto((a) => !a)}
@@ -156,7 +171,6 @@ export function SetlistViewer({ set, songs }: Props) {
           <span className="text-xs text-slate-400">← / → (or a foot pedal) change songs</span>
         </div>
 
-        {/* Roadmap column + the full, fixed song */}
         <div className="sm:flex sm:gap-4">
           {order.length > 0 && (
             <aside className="mb-3 sm:mb-0 sm:w-44 sm:shrink-0">
@@ -175,11 +189,6 @@ export function SetlistViewer({ set, songs }: Props) {
           )}
 
           <main className="min-w-0 flex-1 rounded-xl bg-white p-4 shadow-sm dark:bg-slate-900 sm:p-6">
-            {entry.note && (
-              <div className="mb-4 rounded-lg bg-amber-100 px-3 py-2 text-sm font-medium text-amber-900 dark:bg-amber-900/30 dark:text-amber-200">
-                Cue: {entry.note}
-              </div>
-            )}
             <SongView
               key={i + ":" + entry.songId}
               song={song}
@@ -187,6 +196,8 @@ export function SetlistViewer({ set, songs }: Props) {
               initialCapo={entry.capo}
               initialNotation={entry.notation}
               initialView={entry.view}
+              note={entry.note}
+              onNoteChange={(v) => setNote(origIdx, v)}
             />
           </main>
         </div>
@@ -212,9 +223,8 @@ export function SetlistViewer({ set, songs }: Props) {
         </div>
       </div>
 
-      {/* Print / PDF */}
       <div className="print-only">
-        {entries.map((e, j) => {
+        {entries.map(({ e }, j) => {
           const s = byId.get(e.songId)!;
           const sounding = s.key ? transposeKey(s.key, e.transpose) : null;
           const ord = orderLabels(e, s);
@@ -230,7 +240,7 @@ export function SetlistViewer({ set, songs }: Props) {
                 </div>
               )}
               {e.note && (
-                <div className="mt-1 text-sm">
+                <div className="mt-1 whitespace-pre-line text-sm">
                   <span className="font-semibold">Cue: </span>
                   {e.note}
                 </div>

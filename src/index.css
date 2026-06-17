@@ -24,8 +24,20 @@ html.stage {
 html.stage body {
   background: #000 !important;
 }
-html.stage .stage-text {
-  color: #fff !important;
+
+/* Metronome light flash (replays each beat via React key change). */
+@keyframes metroFlash {
+  from {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+  to {
+    opacity: 0.25;
+    transform: scale(1);
+  }
+}
+.metro-flash {
+  animation: metroFlash 0.16s ease-out;
 }
 
 /* Print / Save-as-PDF: ink-friendly, ignores dark/stage theme. */

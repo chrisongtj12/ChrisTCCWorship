@@ -265,11 +265,12 @@ export function SetlistBuilder({ songs, set, onChange }: Props) {
                         </button>
                       </div>
 
-                      <input
+                      <textarea
                         value={entry.note}
                         onChange={(e) => updateEntry(i, { note: e.target.value })}
-                        placeholder="Cue note (e.g. start a cappella, key change after bridge)"
-                        className="mt-2 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs dark:border-slate-700 dark:bg-slate-900"
+                        rows={2}
+                        placeholder="Cue notes (e.g. start a cappella, key change after bridge, drums in at C2)"
+                        className="mt-2 w-full resize-y rounded-md border border-amber-300 bg-amber-50 px-2 py-1.5 text-xs text-amber-900 placeholder:text-amber-400 dark:border-amber-700/60 dark:bg-amber-900/20 dark:text-amber-100"
                       />
 
                       {expanded === i && (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Song } from "../lib/types.ts";
 import type { Notation, View } from "../lib/setlist.ts";
 import { transposeKey } from "../lib/chordpro.ts";
@@ -12,11 +12,19 @@ type Props = {
   initialCapo?: number;
   initialNotation?: Notation;
   initialView?: View;
+  note?: string;
+  onNoteChange?: (v: string) => void;
 };
 
 const SCALE_KEY = "tcc.fontscale";
 function clampScale(v: number): number {
   return Math.min(2.2, Math.max(0.6, Math.round(v * 10) / 10));
+}
+
+function beatsFromTime(time: string | null): number {
+  if (!time) return 4;
+  const n = parseInt(time.split("/")[0], 10);
+  return Number.isNaN(n) || n < 1 ? 4 : n;
 }
 
 export function SongView({
@@ -25,6 +33,8 @@ export function SongView({
   initialCapo = 0,
   initialNotation = "names",
   initialView = "chart",
+  note,
+  onNoteChange,
 }: Props) {
   const hasChart = !!song.choRaw;
   const hasLyrics = !!song.lyrics;
@@ -37,6 +47,43 @@ export function SongView({
     const v = parseFloat(localStorage.getItem(SCALE_KEY) || "1");
     return Number.isNaN(v) ? 1 : clampScale(v);
   });
+
+  // Metronome / tempo
+  const bpmKey = `tcc.bpm.${song.id}`;
+  const [bpm, setBpm] = useState<number>(() => {
+    const saved = parseInt(localStorage.getItem(bpmKey) || "", 10);
+    if (!Number.isNaN(saved)) return saved;
+    const t = song.tempo ? parseInt(song.tempo, 10) : NaN;
+    return Number.isNaN(t) ? 120 : t;
+  });
+  const [metro, setMetro] = useState(false);
+  const [tick, setTick] = useState(0);
+  const [beat, setBeat] = useState(0);
+  const beats = beatsFromTime(song.time);
+
+  const changeBpm = (v: number) => {
+    const c = Math.min(300, Math.max(30, v));
+    setBpm(c);
+    try {
+      localStorage.setItem(bpmKey, String(c));
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const beatRef = useRef(0);
+  useEffect(() => {
+    if (!metro) return;
+    beatRef.current = 0;
+    setBeat(0);
+    setTick((x) => x + 1);
+    const id = setInterval(() => {
+      beatRef.current = (beatRef.current + 1) % beats;
+      setBeat(beatRef.current);
+      setTick((x) => x + 1);
+    }, 60000 / bpm);
+    return () => clearInterval(id);
+  }, [metro, bpm, beats]);
 
   const changeScale = (delta: number) => {
     const c = clampScale(scale + delta);
@@ -61,15 +108,52 @@ export function SongView({
         <h2 className="text-xl font-bold">{song.title}</h2>
         {song.artist && <span className="text-sm text-slate-400">{song.artist}</span>}
       </div>
-      {(song.ccli || song.tempo || song.time) && (
-        <div className="mb-3 text-xs text-slate-400">
-          {[song.time, song.tempo ? `${song.tempo} BPM` : "", song.ccli ? `CCLI #${song.ccli}` : ""]
-            .filter(Boolean)
-            .join("  ·  ")}
-        </div>
-      )}
+      {song.ccli && <div className="mb-2 text-xs text-slate-400">CCLI #{song.ccli}</div>}
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      {/* Tempo + metronome bar */}
+      <div className="mb-3 flex flex-wrap items-center gap-3 rounded-lg bg-slate-100 px-3 py-2 dark:bg-slate-800">
+        {song.time && (
+          <span className="text-base font-bold tabular-nums" title="Time signature">
+            {song.time}
+          </span>
+        )}
+        <label className="flex items-center gap-1 text-sm">
+          <span className="text-slate-500">BPM</span>
+          <input
+            type="number"
+            value={bpm}
+            min={30}
+            max={300}
+            onChange={(e) => changeBpm(parseInt(e.target.value, 10) || 0)}
+            className="w-16 rounded-md border border-slate-300 bg-white px-2 py-1 text-sm font-semibold tabular-nums dark:border-slate-600 dark:bg-slate-900"
+          />
+        </label>
+        <button
+          onClick={() => setMetro((m) => !m)}
+          className={
+            "flex items-center gap-2 rounded-md px-3 py-1 text-sm font-medium " +
+            (metro ? "bg-emerald-600 text-white" : "border border-slate-300 text-slate-600 dark:border-slate-600 dark:text-slate-300")
+          }
+          title="Metronome light"
+        >
+          <span
+            key={tick}
+            className={
+              "inline-block h-3.5 w-3.5 rounded-full " +
+              (metro ? "metro-flash " : "") +
+              (!metro
+                ? "bg-slate-400"
+                : beat === 0
+                ? "bg-amber-300"
+                : "bg-sky-300")
+            }
+          />
+          Metronome
+        </button>
+        {metro && <span className="text-xs text-slate-400 tabular-nums">beat {beat + 1}/{beats}</span>}
+      </div>
+
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         <Segmented
           value={view}
           onChange={(v) => setView(v as View)}
@@ -79,14 +163,11 @@ export function SongView({
           ]}
         />
 
-        {/* Font size — fit the song to the screen */}
         <div className="flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700">
           <Btn onClick={() => changeScale(-0.1)} aria="smaller text">
             A−
           </Btn>
-          <span className="min-w-[3rem] text-center text-xs tabular-nums text-slate-400">
-            {Math.round(scale * 100)}%
-          </span>
+          <span className="min-w-[3rem] text-center text-xs tabular-nums text-slate-400">{Math.round(scale * 100)}%</span>
           <Btn onClick={() => changeScale(0.1)} aria="larger text">
             A+
           </Btn>
@@ -98,9 +179,7 @@ export function SongView({
               <Btn onClick={() => setTranspose((t) => t - 1)} aria="transpose down">
                 –
               </Btn>
-              <span className="min-w-[3.5rem] text-center text-sm font-medium tabular-nums">
-                {soundingKey ?? "key?"}
-              </span>
+              <span className="min-w-[3.5rem] text-center text-sm font-medium tabular-nums">{soundingKey ?? "key?"}</span>
               <Btn onClick={() => setTranspose((t) => t + 1)} aria="transpose up">
                 +
               </Btn>
@@ -129,22 +208,26 @@ export function SongView({
         )}
       </div>
 
+      {/* Cue notes (editable when onNoteChange is provided) */}
+      {onNoteChange && (
+        <textarea
+          value={note ?? ""}
+          onChange={(e) => onNoteChange(e.target.value)}
+          rows={2}
+          placeholder="Cue notes (e.g. start a cappella, key change to D after bridge, drums in at C2)"
+          className="mb-4 w-full resize-y rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 placeholder:text-amber-400 dark:border-amber-700/60 dark:bg-amber-900/20 dark:text-amber-100"
+        />
+      )}
+
       {view === "chart" && capo > 0 && hasChart && (
         <div className="mb-3 text-xs text-slate-400">
-          Capo {capo} — shapes in {song.key ? transposeKey(song.key, transpose - capo) : "?"}, sounding in{" "}
-          {soundingKey}.
+          Capo {capo} — shapes in {song.key ? transposeKey(song.key, transpose - capo) : "?"}, sounding in {soundingKey}.
         </div>
       )}
 
       <div className="overflow-x-auto" style={{ zoom: scale } as React.CSSProperties}>
         {view === "chart" && hasChart ? (
-          <ChartView
-            choRaw={song.choRaw!}
-            originalKey={song.key}
-            transpose={transpose}
-            capo={capo}
-            notation={notation}
-          />
+          <ChartView choRaw={song.choRaw!} originalKey={song.key} transpose={transpose} capo={capo} notation={notation} />
         ) : hasLyrics ? (
           <LyricsView lyrics={song.lyrics!} />
         ) : (
