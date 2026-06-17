@@ -1,7 +1,8 @@
 import { useState } from "react";
 import type { Song } from "../lib/types.ts";
-import type { Setlist } from "../lib/setlist.ts";
+import type { Setlist, SetEntry } from "../lib/setlist.ts";
 import { transposeKey } from "../lib/chordpro.ts";
+import { availableSections } from "../lib/song.ts";
 import { SongView } from "./SongView.tsx";
 import { ChartView } from "./ChartView.tsx";
 import { LyricsView } from "./LyricsView.tsx";
@@ -12,12 +13,16 @@ type Props = {
   songs: Song[];
 };
 
+// The arrangement reminder for an entry: its flow, or the song's natural order.
+function orderLabels(entry: SetEntry, song: Song): string[] {
+  return entry.flow && entry.flow.length ? entry.flow : availableSections(song);
+}
+
 export function SetlistViewer({ set, songs }: Props) {
   const byId = new Map(songs.map((s) => [s.id, s]));
   const entries = set.entries.filter((e) => byId.has(e.songId));
   const [idx, setIdx] = useState(0);
 
-  // Print light (ink-friendly) regardless of the active theme.
   const printSet = () => {
     const el = document.documentElement;
     const had = { dark: el.classList.contains("dark"), stage: el.classList.contains("stage") };
@@ -42,11 +47,12 @@ export function SetlistViewer({ set, songs }: Props) {
   const i = Math.min(idx, entries.length - 1);
   const entry = entries[i];
   const song = byId.get(entry.songId)!;
+  const order = orderLabels(entry, song);
 
   return (
     <Shell title={set.name || "Setlist"} date={set.date} onPrint={printSet}>
-      {/* Interactive performance view (hidden when printing) */}
       <div className="no-print">
+        {/* Song nav */}
         <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
           {entries.map((e, j) => {
             const s = byId.get(e.songId)!;
@@ -68,17 +74,37 @@ export function SetlistViewer({ set, songs }: Props) {
           })}
         </div>
 
-        <main className="rounded-xl bg-white p-4 shadow-sm dark:bg-slate-900 sm:p-6">
-          <SongView
-            key={i + ":" + entry.songId}
-            song={song}
-            initialTranspose={entry.transpose}
-            initialCapo={entry.capo}
-            initialNotation={entry.notation}
-            initialView={entry.view}
-            flow={entry.flow}
-          />
-        </main>
+        {/* Roadmap column + the full, fixed song */}
+        <div className="sm:flex sm:gap-4">
+          {order.length > 0 && (
+            <aside className="mb-3 sm:mb-0 sm:w-44 sm:shrink-0">
+              <div className="rounded-xl bg-white p-3 shadow-sm dark:bg-slate-900 sm:sticky sm:top-4">
+                <div className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Song order
+                </div>
+                <ol className="space-y-1">
+                  {order.map((l, k) => (
+                    <li key={k} className="flex gap-2 text-sm">
+                      <span className="w-4 text-right text-slate-400">{k + 1}</span>
+                      <span className="text-slate-700 dark:text-slate-200">{l}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            </aside>
+          )}
+
+          <main className="min-w-0 flex-1 rounded-xl bg-white p-4 shadow-sm dark:bg-slate-900 sm:p-6">
+            <SongView
+              key={i + ":" + entry.songId}
+              song={song}
+              initialTranspose={entry.transpose}
+              initialCapo={entry.capo}
+              initialNotation={entry.notation}
+              initialView={entry.view}
+            />
+          </main>
+        </div>
 
         <div className="mt-4 flex items-center justify-between">
           <button
@@ -101,16 +127,23 @@ export function SetlistViewer({ set, songs }: Props) {
         </div>
       </div>
 
-      {/* Print / PDF: every song in order, ink-friendly */}
+      {/* Print / PDF: every song in full, with its order reminder */}
       <div className="print-only">
         {entries.map((e, j) => {
           const s = byId.get(e.songId)!;
           const sounding = s.key ? transposeKey(s.key, e.transpose) : null;
+          const ord = orderLabels(e, s);
           return (
             <div key={j} className="print-song mb-6">
               <h2 className="text-xl font-bold">
                 {j + 1}. {s.title} {sounding ? <span className="text-base font-normal">— {sounding}</span> : null}
               </h2>
+              {ord.length > 0 && (
+                <div className="mt-1 text-sm">
+                  <span className="font-semibold">Order: </span>
+                  {ord.join(" · ")}
+                </div>
+              )}
               <div className="mt-2">
                 {e.view === "chart" && s.choRaw ? (
                   <ChartView
@@ -119,10 +152,9 @@ export function SetlistViewer({ set, songs }: Props) {
                     transpose={e.transpose}
                     capo={e.capo}
                     notation={e.notation}
-                    flow={e.flow}
                   />
                 ) : s.lyrics ? (
-                  <LyricsView lyrics={s.lyrics} flow={e.flow} />
+                  <LyricsView lyrics={s.lyrics} />
                 ) : null}
               </div>
             </div>

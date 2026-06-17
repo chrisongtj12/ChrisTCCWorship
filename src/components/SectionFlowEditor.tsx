@@ -1,16 +1,16 @@
 type Props = {
   available: string[]; // all section labels the song offers
-  flow: string[] | null; // current flow; null = natural order
+  flow: string[] | null; // current order; null = natural order
   onChange: (flow: string[] | null) => void;
 };
 
 /**
- * Arrange a song's sections into a custom play order (e.g. V1–C–V2–C–Bridge–C).
- * Click a section to append it; reorder/remove items in the sequence; sections
- * may repeat. "Reset" returns to the song's natural order (flow = null).
+ * Set the running order shown to the band (e.g. V1–C–V2–C–Bridge–C).
+ * This is a REMINDER only — it does NOT change the song chart/lyrics, which
+ * always display in full. Sections may repeat. "Reset" = the natural order.
  */
 export function SectionFlowEditor({ available, flow, onChange }: Props) {
-  const seq = flow ?? available; // show natural order as the starting sequence
+  const seq = flow ?? available;
 
   const set = (next: string[]) => onChange(next);
   const append = (label: string) => set([...seq, label]);
@@ -25,25 +25,20 @@ export function SectionFlowEditor({ available, flow, onChange }: Props) {
 
   return (
     <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Section flow</span>
-        <button
-          onClick={() => onChange(null)}
-          className="text-xs text-slate-400 underline hover:text-slate-600"
-        >
+      <div className="mb-1 flex items-center justify-between">
+        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Song order (reminder)</span>
+        <button onClick={() => onChange(null)} className="text-xs text-slate-400 underline hover:text-slate-600">
           reset to natural
         </button>
       </div>
+      <p className="mb-2 text-xs text-slate-400">Shown to the band as a running-order reminder. Doesn't change the chart.</p>
 
       {seq.length === 0 ? (
         <p className="mb-2 text-xs text-slate-400">No sections yet — add from below.</p>
       ) : (
         <ol className="mb-3 space-y-1">
           {seq.map((label, i) => (
-            <li
-              key={i}
-              className="flex items-center gap-2 rounded bg-slate-50 px-2 py-1 text-sm dark:bg-slate-800"
-            >
+            <li key={i} className="flex items-center gap-2 rounded bg-slate-50 px-2 py-1 text-sm dark:bg-slate-800">
               <span className="w-5 text-right text-xs text-slate-400">{i + 1}</span>
               <span className="flex-1">{label}</span>
               <button onClick={() => move(i, -1)} aria-label="up" className="px-1 text-slate-400 hover:text-sky-600">

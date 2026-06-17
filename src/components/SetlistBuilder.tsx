@@ -221,7 +221,7 @@ export function SetlistBuilder({ songs, set, onChange }: Props) {
                           onClick={() => setExpanded(expanded === i ? null : i)}
                           className="rounded-md border border-slate-200 px-2 py-0.5 text-xs text-slate-600 hover:border-sky-400 dark:border-slate-700 dark:text-slate-300"
                         >
-                          {entry.flow ? `Sections (${entry.flow.length})` : "Sections"}
+                          {entry.flow ? `Order (${entry.flow.length})` : "Order"}
                         </button>
                       </div>
 

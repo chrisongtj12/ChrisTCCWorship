@@ -12,14 +12,11 @@ type Props = {
   initialCapo?: number;
   initialNotation?: Notation;
   initialView?: View;
-  flow?: string[] | null;
 };
 
 /**
- * Renders a single song with its own controls (Chart/Lyrics, transpose, capo,
- * Names/Roman). Seeded from initial* props. Reused by the Library browser and
- * the shared Setlist viewer (where viewers can transpose locally).
- * Parents should pass key={song.id + ...} to reset state when the song changes.
+ * Renders a single song (full, fixed chart/lyrics) with its own controls.
+ * Seeded from initial* props. Parents pass key={...} to reset on song change.
  */
 export function SongView({
   song,
@@ -27,7 +24,6 @@ export function SongView({
   initialCapo = 0,
   initialNotation = "names",
   initialView = "chart",
-  flow = null,
 }: Props) {
   const hasChart = !!song.choRaw;
   const hasLyrics = !!song.lyrics;
@@ -37,7 +33,6 @@ export function SongView({
   const [capo, setCapo] = useState(initialCapo);
   const [notation, setNotation] = useState<Notation>(initialNotation);
 
-  // If the song can't satisfy the requested view, fall back.
   useEffect(() => {
     if (view === "chart" && !hasChart) setView("lyrics");
     if (view === "lyrics" && !hasLyrics) setView("chart");
@@ -115,10 +110,9 @@ export function SongView({
             transpose={transpose}
             capo={capo}
             notation={notation}
-            flow={flow}
           />
         ) : hasLyrics ? (
-          <LyricsView lyrics={song.lyrics!} flow={flow} />
+          <LyricsView lyrics={song.lyrics!} />
         ) : (
           <p className="text-slate-400">No {view} available.</p>
         )}

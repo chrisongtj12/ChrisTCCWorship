@@ -6,7 +6,6 @@ import {
   chordToRoman,
   transposeKey,
   type SongLine,
-  type ChartSection,
 } from "../lib/chordpro.ts";
 
 type Props = {
@@ -15,30 +14,14 @@ type Props = {
   transpose: number;
   capo: number;
   notation: "names" | "roman";
-  /** ordered section labels; null = natural order */
-  flow?: string[] | null;
 };
 
-export function ChartView({ choRaw, originalKey, transpose, capo, notation, flow }: Props) {
+export function ChartView({ choRaw, originalKey, transpose, capo, notation }: Props) {
+  // The song chart is FIXED — always rendered in full, natural order.
   const sections = useMemo(() => groupChartSections(parseChordPro(choRaw)), [choRaw]);
 
-  // Chord NAMES are printed for the shapes you finger: sounding key (+transpose)
-  // shifted down by the capo fret.
   const displayOffset = transpose - capo;
   const shapeKey = originalKey ? transposeKey(originalKey, displayOffset) : null;
-
-  // Determine the section render order.
-  const ordered: ChartSection[] = useMemo(() => {
-    if (!flow || flow.length === 0) return sections;
-    const out: ChartSection[] = [];
-    const intro = sections.find((s) => s.label === null);
-    if (intro && intro.lines.some((l) => l.type !== "blank")) out.push(intro);
-    for (const label of flow) {
-      const match = sections.find((s) => s.label === label);
-      if (match) out.push(match);
-    }
-    return out;
-  }, [sections, flow]);
 
   function renderLine(line: SongLine, idx: number) {
     switch (line.type) {
@@ -77,7 +60,7 @@ export function ChartView({ choRaw, originalKey, transpose, capo, notation, flow
 
   return (
     <div className="text-[15px] sm:text-base">
-      {ordered.map((sec, si) => (
+      {sections.map((sec, si) => (
         <div key={si}>
           {sec.label && (
             <div className="mt-5 mb-2 text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
