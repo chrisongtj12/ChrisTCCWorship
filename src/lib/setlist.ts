@@ -112,3 +112,51 @@ export function saveDraft(set: Setlist): void {
     /* ignore quota/unavailable */
   }
 }
+
+// --- named saved setlists (localStorage, per device) ------------------------
+
+export type SavedSetlist = Setlist & { id: string; savedAt: number };
+
+const SAVED_KEY = "tcc.setlist.saved";
+
+export function loadSavedSets(): SavedSetlist[] {
+  try {
+    const list = JSON.parse(localStorage.getItem(SAVED_KEY) || "[]");
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeSaved(list: SavedSetlist[]): void {
+  try {
+    localStorage.setItem(SAVED_KEY, JSON.stringify(list));
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Save (or overwrite by name) the current set; returns the updated list. */
+export function saveNamedSet(set: Setlist): SavedSetlist[] {
+  const list = loadSavedSets();
+  const name = set.name.trim() || "Untitled set";
+  const at = Date.now();
+  const i = list.findIndex((s) => s.name.toLowerCase() === name.toLowerCase());
+  const entry: SavedSetlist = {
+    ...set,
+    name,
+    id: i >= 0 ? list[i].id : String(at),
+    savedAt: at,
+  };
+  if (i >= 0) list[i] = entry;
+  else list.push(entry);
+  list.sort((a, b) => b.savedAt - a.savedAt);
+  writeSaved(list);
+  return list;
+}
+
+export function deleteSavedSet(id: string): SavedSetlist[] {
+  const list = loadSavedSets().filter((s) => s.id !== id);
+  writeSaved(list);
+  return list;
+}

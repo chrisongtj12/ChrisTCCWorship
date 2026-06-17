@@ -16,3 +16,39 @@ body {
   margin: 0;
   -webkit-text-size-adjust: 100%;
 }
+
+/* Stage mode: maximum contrast + larger text for a dim platform. */
+html.stage {
+  font-size: 112.5%;
+}
+html.stage body {
+  background: #000 !important;
+}
+html.stage .stage-text {
+  color: #fff !important;
+}
+
+/* Print / Save-as-PDF: ink-friendly, ignores dark/stage theme. */
+.print-only {
+  display: none;
+}
+@media print {
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 12pt;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .print-song {
+    break-inside: avoid;
+  }
+  .print-song + .print-song {
+    page-break-before: always;
+  }
+}

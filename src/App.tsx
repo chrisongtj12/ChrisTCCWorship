@@ -11,6 +11,7 @@ import {
 import { LibraryView } from "./components/LibraryView.tsx";
 import { SetlistBuilder } from "./components/SetlistBuilder.tsx";
 import { SetlistViewer } from "./components/SetlistViewer.tsx";
+import { ThemeToggle } from "./components/ThemeToggle.tsx";
 
 type Tab = "library" | "setlist";
 
@@ -59,7 +60,7 @@ export function App() {
   return (
     <div className="min-h-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       <div className="mx-auto max-w-5xl px-4 py-4 sm:py-6">
-        <header className="mb-4 flex items-center justify-between">
+        <header className="mb-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <h1 className="text-lg font-bold tracking-tight">TCC Setlist</h1>
             <nav className="inline-flex rounded-lg border border-slate-200 p-0.5 dark:border-slate-700">
@@ -71,7 +72,10 @@ export function App() {
               </TabBtn>
             </nav>
           </div>
-          <span className="text-xs text-slate-400">{songs.length} songs</span>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <span className="hidden text-xs text-slate-400 sm:inline">{songs.length} songs</span>
+          </div>
         </header>
 
         {tab === "library" ? (
