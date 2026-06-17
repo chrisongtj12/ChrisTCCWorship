@@ -2,13 +2,15 @@
 // in the share URL. Keyed by the set's shareId. Backed by Vercel KV / Upstash
 // Redis via its REST API (no extra npm dependency — uses global fetch).
 //
-// Env (injected by Vercel when you attach a KV / Upstash store):
-//   KV_REST_API_URL, KV_REST_API_TOKEN
+// Env (injected by Vercel when you attach a KV / Upstash store). Accepts both
+// the classic Vercel KV names and the Upstash-direct names:
+//   KV_REST_API_URL / KV_REST_API_TOKEN   (Vercel KV)
+//   UPSTASH_REDIS_REST_URL / ..._TOKEN    (Upstash marketplace)
 // If they're absent the endpoint is a graceful no-op, so the site keeps
 // working exactly as before until KV is enabled.
 
-const KV_URL = process.env.KV_REST_API_URL;
-const KV_TOKEN = process.env.KV_REST_API_TOKEN;
+const KV_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+const KV_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
 
 const PREFIX = "tccnotes:";
 const MAX_NOTE = 2000; // chars per cue note
