@@ -269,8 +269,8 @@ export function SetlistBuilder({ songs, set, onChange }: Props) {
                         value={entry.note}
                         onChange={(e) => updateEntry(i, { note: e.target.value })}
                         rows={2}
-                        placeholder="Cue notes (e.g. start a cappella, key change after bridge, drums in at C2)"
-                        className="mt-2 w-full resize-y rounded-md border border-amber-300 bg-amber-50 px-2 py-1.5 text-xs text-amber-900 placeholder:text-amber-400 dark:border-amber-700/60 dark:bg-amber-900/20 dark:text-amber-100"
+                        placeholder="Cue notes"
+                        className="mt-2 w-full resize-y rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
                       />
 
                       {expanded === i && (
