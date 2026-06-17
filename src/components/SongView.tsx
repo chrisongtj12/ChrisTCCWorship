@@ -14,10 +14,11 @@ type Props = {
   initialView?: View;
 };
 
-/**
- * Renders a single song (full, fixed chart/lyrics) with its own controls.
- * Seeded from initial* props. Parents pass key={...} to reset on song change.
- */
+const SCALE_KEY = "tcc.fontscale";
+function clampScale(v: number): number {
+  return Math.min(2.2, Math.max(0.6, Math.round(v * 10) / 10));
+}
+
 export function SongView({
   song,
   initialTranspose = 0,
@@ -32,6 +33,20 @@ export function SongView({
   const [transpose, setTranspose] = useState(initialTranspose);
   const [capo, setCapo] = useState(initialCapo);
   const [notation, setNotation] = useState<Notation>(initialNotation);
+  const [scale, setScale] = useState<number>(() => {
+    const v = parseFloat(localStorage.getItem(SCALE_KEY) || "1");
+    return Number.isNaN(v) ? 1 : clampScale(v);
+  });
+
+  const changeScale = (delta: number) => {
+    const c = clampScale(scale + delta);
+    setScale(c);
+    try {
+      localStorage.setItem(SCALE_KEY, String(c));
+    } catch {
+      /* ignore */
+    }
+  };
 
   useEffect(() => {
     if (view === "chart" && !hasChart) setView("lyrics");
@@ -57,6 +72,19 @@ export function SongView({
             { value: "lyrics", label: "Lyrics", disabled: !hasLyrics },
           ]}
         />
+
+        {/* Font size — fit the song to the screen */}
+        <div className="flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700">
+          <Btn onClick={() => changeScale(-0.1)} aria="smaller text">
+            A−
+          </Btn>
+          <span className="min-w-[3rem] text-center text-xs tabular-nums text-slate-400">
+            {Math.round(scale * 100)}%
+          </span>
+          <Btn onClick={() => changeScale(0.1)} aria="larger text">
+            A+
+          </Btn>
+        </div>
 
         {view === "chart" && hasChart && (
           <>
@@ -102,7 +130,7 @@ export function SongView({
         </div>
       )}
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto" style={{ zoom: scale } as React.CSSProperties}>
         {view === "chart" && hasChart ? (
           <ChartView
             choRaw={song.choRaw!}
