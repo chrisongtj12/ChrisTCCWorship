@@ -6,21 +6,22 @@ export type Notation = "names" | "roman";
 
 export type SetEntry = {
   songId: string;
-  transpose: number; // semitones from original
-  capo: number; // 0-7
+  transpose: number;
+  capo: number;
   notation: Notation;
-  view: View; // default view for this song in the set
-  flow: string[] | null; // ordered section labels; null = natural order
+  view: View;
+  flow: string[] | null; // running-order reminder; null = natural
+  note: string; // free-text cue, e.g. "start a cappella"
 };
 
 export type Setlist = {
   name: string;
-  date: string; // free text, e.g. "2026-06-21"
+  date: string;
   entries: SetEntry[];
 };
 
 export function newEntry(songId: string): SetEntry {
-  return { songId, transpose: 0, capo: 0, notation: "names", view: "chart", flow: null };
+  return { songId, transpose: 0, capo: 0, notation: "names", view: "chart", flow: null, note: "" };
 }
 
 export function emptySetlist(): Setlist {
@@ -28,9 +29,9 @@ export function emptySetlist(): Setlist {
 }
 
 // --- compact wire format ---------------------------------------------------
-// [songId, transpose, capo, notation(0|1), view(0|1), flow(string[]|0)]
+// [songId, transpose, capo, notation(0|1), view(0|1), flow(string[]|0), note]
 
-type WireEntry = [string, number, number, 0 | 1, 0 | 1, string[] | 0];
+type WireEntry = [string, number, number, 0 | 1, 0 | 1, string[] | 0, string?];
 type Wire = { n: string; d: string; e: WireEntry[] };
 
 function toWire(set: Setlist): Wire {
@@ -44,6 +45,7 @@ function toWire(set: Setlist): Wire {
       x.notation === "roman" ? 1 : 0,
       x.view === "lyrics" ? 1 : 0,
       x.flow ?? 0,
+      x.note || "",
     ]),
   };
 }
@@ -59,16 +61,15 @@ function fromWire(w: Wire): Setlist {
       notation: e[3] === 1 ? "roman" : "names",
       view: e[4] === 1 ? "lyrics" : "chart",
       flow: Array.isArray(e[5]) ? e[5] : null,
+      note: typeof e[6] === "string" ? e[6] : "",
     })),
   };
 }
 
-/** Encode a setlist into a compact, URL-safe string for a share link. */
 export function encodeSetlist(set: Setlist): string {
   return compressToEncodedURIComponent(JSON.stringify(toWire(set)));
 }
 
-/** Decode a share-link string back into a Setlist, or null if invalid. */
 export function decodeSetlist(s: string): Setlist | null {
   try {
     const json = decompressFromEncodedURIComponent(s);
@@ -79,13 +80,11 @@ export function decodeSetlist(s: string): Setlist | null {
   }
 }
 
-/** Build a full share URL for the current page + an encoded set. */
 export function shareUrl(set: Setlist): string {
   const base = window.location.origin + window.location.pathname;
   return `${base}#s=${encodeSetlist(set)}`;
 }
 
-/** Read a shared setlist from the current URL hash, if present. */
 export function setlistFromHash(): Setlist | null {
   const h = window.location.hash;
   const m = h.match(/^#s=(.+)$/);
@@ -109,7 +108,7 @@ export function saveDraft(set: Setlist): void {
   try {
     localStorage.setItem(DRAFT_KEY, JSON.stringify(set));
   } catch {
-    /* ignore quota/unavailable */
+    /* ignore */
   }
 }
 
@@ -136,18 +135,12 @@ function writeSaved(list: SavedSetlist[]): void {
   }
 }
 
-/** Save (or overwrite by name) the current set; returns the updated list. */
 export function saveNamedSet(set: Setlist): SavedSetlist[] {
   const list = loadSavedSets();
   const name = set.name.trim() || "Untitled set";
   const at = Date.now();
   const i = list.findIndex((s) => s.name.toLowerCase() === name.toLowerCase());
-  const entry: SavedSetlist = {
-    ...set,
-    name,
-    id: i >= 0 ? list[i].id : String(at),
-    savedAt: at,
-  };
+  const entry: SavedSetlist = { ...set, name, id: i >= 0 ? list[i].id : String(at), savedAt: at };
   if (i >= 0) list[i] = entry;
   else list.push(entry);
   list.sort((a, b) => b.savedAt - a.savedAt);
@@ -159,4 +152,22 @@ export function deleteSavedSet(id: string): SavedSetlist[] {
   const list = loadSavedSets().filter((s) => s.id !== id);
   writeSaved(list);
   return list;
+}
+
+/** Export all saved sets as a portable code (paste on another device). */
+export function exportSavedCode(): string {
+  return compressToEncodedURIComponent(JSON.stringify(loadSavedSets()));
+}
+
+/** Import saved sets from a code, merging by id. Returns the new list. */
+export function importSavedCode(code: string): SavedSetlist[] {
+  const json = decompressFromEncodedURIComponent(code.trim());
+  if (!json) throw new Error("Invalid code");
+  const incoming = JSON.parse(json) as SavedSetlist[];
+  if (!Array.isArray(incoming)) throw new Error("Invalid code");
+  const byId = new Map(loadSavedSets().map((s) => [s.id, s]));
+  for (const s of incoming) if (s && s.id) byId.set(s.id, s);
+  const merged = [...byId.values()].sort((a, b) => b.savedAt - a.savedAt);
+  writeSaved(merged);
+  return merged;
 }

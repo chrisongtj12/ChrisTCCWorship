@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Song } from "../lib/types.ts";
 import type { Setlist, SetEntry } from "../lib/setlist.ts";
 import { transposeKey } from "../lib/chordpro.ts";
@@ -13,7 +13,6 @@ type Props = {
   songs: Song[];
 };
 
-// The arrangement reminder for an entry: its flow, or the song's natural order.
 function orderLabels(entry: SetEntry, song: Song): string[] {
   return entry.flow && entry.flow.length ? entry.flow : availableSections(song);
 }
@@ -22,6 +21,66 @@ export function SetlistViewer({ set, songs }: Props) {
   const byId = new Map(songs.map((s) => [s.id, s]));
   const entries = set.entries.filter((e) => byId.has(e.songId));
   const [idx, setIdx] = useState(0);
+  const [auto, setAuto] = useState(false);
+  const [speed, setSpeed] = useState<number>(() => {
+    const v = parseInt(localStorage.getItem("tcc.scrollspeed") || "40", 10);
+    return Number.isNaN(v) ? 40 : v;
+  });
+
+  const n = entries.length;
+  const go = (next: number) => setIdx((p) => Math.min(n - 1, Math.max(0, next ?? p)));
+
+  // Keyboard / foot-pedal nav: ←/→ and PageUp/PageDown move between songs.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
+      if (e.key === "ArrowRight" || e.key === "PageDown") {
+        e.preventDefault();
+        setIdx((p) => Math.min(n - 1, p + 1));
+      } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
+        e.preventDefault();
+        setIdx((p) => Math.max(0, p - 1));
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [n]);
+
+  // New song -> jump to top and stop auto-scroll.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    setAuto(false);
+  }, [idx]);
+
+  // Auto-scroll loop.
+  useEffect(() => {
+    if (!auto) return;
+    let raf = 0;
+    let last = performance.now();
+    const tick = (now: number) => {
+      const dt = (now - last) / 1000;
+      last = now;
+      window.scrollBy(0, speed * dt);
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 1) {
+        setAuto(false);
+        return;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [auto, speed]);
+
+  const changeSpeed = (d: number) => {
+    const v = Math.min(200, Math.max(10, speed + d));
+    setSpeed(v);
+    try {
+      localStorage.setItem("tcc.scrollspeed", String(v));
+    } catch {
+      /* ignore */
+    }
+  };
 
   const printSet = () => {
     const el = document.documentElement;
@@ -34,7 +93,7 @@ export function SetlistViewer({ set, songs }: Props) {
     }, 800);
   };
 
-  if (entries.length === 0) {
+  if (n === 0) {
     return (
       <Shell title={set.name || "Setlist"} date={set.date} onPrint={printSet}>
         <p className="text-slate-400">
@@ -44,7 +103,7 @@ export function SetlistViewer({ set, songs }: Props) {
     );
   }
 
-  const i = Math.min(idx, entries.length - 1);
+  const i = Math.min(idx, n - 1);
   const entry = entries[i];
   const song = byId.get(entry.songId)!;
   const order = orderLabels(entry, song);
@@ -53,13 +112,13 @@ export function SetlistViewer({ set, songs }: Props) {
     <Shell title={set.name || "Setlist"} date={set.date} onPrint={printSet}>
       <div className="no-print">
         {/* Song nav */}
-        <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+        <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
           {entries.map((e, j) => {
             const s = byId.get(e.songId)!;
             return (
               <button
                 key={j}
-                onClick={() => setIdx(j)}
+                onClick={() => go(j)}
                 className={
                   "shrink-0 rounded-lg px-3 py-1.5 text-sm transition " +
                   (j === i
@@ -74,14 +133,35 @@ export function SetlistViewer({ set, songs }: Props) {
           })}
         </div>
 
+        {/* Auto-scroll controls */}
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
+          <button
+            onClick={() => setAuto((a) => !a)}
+            className={
+              "rounded-lg px-3 py-1.5 font-medium " +
+              (auto ? "bg-emerald-600 text-white hover:bg-emerald-500" : "border border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800")
+            }
+          >
+            {auto ? "⏸ Stop scroll" : "▶ Auto-scroll"}
+          </button>
+          <div className="flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700">
+            <button onClick={() => changeSpeed(-10)} className="px-2.5 py-1 text-slate-500 hover:text-sky-600">
+              –
+            </button>
+            <span className="min-w-[4.5rem] text-center text-xs text-slate-400">speed {speed}</span>
+            <button onClick={() => changeSpeed(10)} className="px-2.5 py-1 text-slate-500 hover:text-sky-600">
+              +
+            </button>
+          </div>
+          <span className="text-xs text-slate-400">← / → (or a foot pedal) change songs</span>
+        </div>
+
         {/* Roadmap column + the full, fixed song */}
         <div className="sm:flex sm:gap-4">
           {order.length > 0 && (
             <aside className="mb-3 sm:mb-0 sm:w-44 sm:shrink-0">
               <div className="rounded-xl bg-white p-3 shadow-sm dark:bg-slate-900 sm:sticky sm:top-4">
-                <div className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">
-                  Song order
-                </div>
+                <div className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">Song order</div>
                 <ol className="space-y-1">
                   {order.map((l, k) => (
                     <li key={k} className="flex gap-2 text-sm">
@@ -95,6 +175,11 @@ export function SetlistViewer({ set, songs }: Props) {
           )}
 
           <main className="min-w-0 flex-1 rounded-xl bg-white p-4 shadow-sm dark:bg-slate-900 sm:p-6">
+            {entry.note && (
+              <div className="mb-4 rounded-lg bg-amber-100 px-3 py-2 text-sm font-medium text-amber-900 dark:bg-amber-900/30 dark:text-amber-200">
+                Cue: {entry.note}
+              </div>
+            )}
             <SongView
               key={i + ":" + entry.songId}
               song={song}
@@ -109,17 +194,17 @@ export function SetlistViewer({ set, songs }: Props) {
         <div className="mt-4 flex items-center justify-between">
           <button
             disabled={i === 0}
-            onClick={() => setIdx(i - 1)}
+            onClick={() => go(i - 1)}
             className="rounded-lg border border-slate-200 px-4 py-2 text-sm disabled:opacity-40 dark:border-slate-700"
           >
             ← Prev
           </button>
           <span className="text-xs text-slate-400">
-            {i + 1} of {entries.length}
+            {i + 1} of {n}
           </span>
           <button
-            disabled={i === entries.length - 1}
-            onClick={() => setIdx(i + 1)}
+            disabled={i === n - 1}
+            onClick={() => go(i + 1)}
             className="rounded-lg border border-slate-200 px-4 py-2 text-sm disabled:opacity-40 dark:border-slate-700"
           >
             Next →
@@ -127,7 +212,7 @@ export function SetlistViewer({ set, songs }: Props) {
         </div>
       </div>
 
-      {/* Print / PDF: every song in full, with its order reminder */}
+      {/* Print / PDF */}
       <div className="print-only">
         {entries.map((e, j) => {
           const s = byId.get(e.songId)!;
@@ -144,15 +229,15 @@ export function SetlistViewer({ set, songs }: Props) {
                   {ord.join(" · ")}
                 </div>
               )}
+              {e.note && (
+                <div className="mt-1 text-sm">
+                  <span className="font-semibold">Cue: </span>
+                  {e.note}
+                </div>
+              )}
               <div className="mt-2">
                 {e.view === "chart" && s.choRaw ? (
-                  <ChartView
-                    choRaw={s.choRaw}
-                    originalKey={s.key}
-                    transpose={e.transpose}
-                    capo={e.capo}
-                    notation={e.notation}
-                  />
+                  <ChartView choRaw={s.choRaw} originalKey={s.key} transpose={e.transpose} capo={e.capo} notation={e.notation} />
                 ) : s.lyrics ? (
                   <LyricsView lyrics={s.lyrics} />
                 ) : null}

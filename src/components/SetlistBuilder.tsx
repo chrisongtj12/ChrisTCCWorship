@@ -1,7 +1,15 @@
 import { useMemo, useState } from "react";
 import type { Song } from "../lib/types.ts";
 import type { Setlist, SetEntry, Notation, View, SavedSetlist } from "../lib/setlist.ts";
-import { shareUrl, encodeSetlist, loadSavedSets, saveNamedSet, deleteSavedSet } from "../lib/setlist.ts";
+import {
+  shareUrl,
+  encodeSetlist,
+  loadSavedSets,
+  saveNamedSet,
+  deleteSavedSet,
+  exportSavedCode,
+  importSavedCode,
+} from "../lib/setlist.ts";
 import { transposeKey } from "../lib/chordpro.ts";
 import { availableSections } from "../lib/song.ts";
 import { Segmented, Btn, CapoSelect } from "./ui.tsx";
@@ -78,6 +86,25 @@ export function SetlistBuilder({ songs, set, onChange }: Props) {
     window.location.hash = "s=" + encodeSetlist(set);
   };
 
+  const exportSets = async () => {
+    const code = exportSavedCode();
+    try {
+      await navigator.clipboard.writeText(code);
+      alert("Saved-sets code copied. On another device, tap Import and paste it.");
+    } catch {
+      window.prompt("Copy this saved-sets code:", code);
+    }
+  };
+  const importSets = () => {
+    const code = window.prompt("Paste a saved-sets code:");
+    if (!code) return;
+    try {
+      setSaved(importSavedCode(code));
+    } catch {
+      alert("Sorry, that code couldn't be read.");
+    }
+  };
+
   const link = set.entries.length ? shareUrl(set) : "";
 
   return (
@@ -97,6 +124,19 @@ export function SetlistBuilder({ songs, set, onChange }: Props) {
             className="rounded-md border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             New set
+          </button>
+          <button
+            onClick={exportSets}
+            disabled={saved.length === 0}
+            className="rounded-md border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 disabled:opacity-40 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+          >
+            Export
+          </button>
+          <button
+            onClick={importSets}
+            className="rounded-md border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+          >
+            Import
           </button>
           <span className="text-xs text-slate-400">Saved on this device.</span>
         </div>
@@ -224,6 +264,13 @@ export function SetlistBuilder({ songs, set, onChange }: Props) {
                           {entry.flow ? `Order (${entry.flow.length})` : "Order"}
                         </button>
                       </div>
+
+                      <input
+                        value={entry.note}
+                        onChange={(e) => updateEntry(i, { note: e.target.value })}
+                        placeholder="Cue note (e.g. start a cappella, key change after bridge)"
+                        className="mt-2 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs dark:border-slate-700 dark:bg-slate-900"
+                      />
 
                       {expanded === i && (
                         <div className="mt-3">

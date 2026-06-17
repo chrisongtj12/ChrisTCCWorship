@@ -50,11 +50,11 @@ export function LibraryView({ songs, onAddToSet }: Props) {
                 onClick={() => onAddToSet(s.id)}
                 title="Add to setlist"
                 className={
-                  "mr-2 hidden rounded px-2 py-1 text-xs sm:block " +
+                  "mr-2 hidden h-6 w-6 rounded text-sm leading-none sm:flex sm:items-center sm:justify-center " +
                   (s.id === selectedId ? "bg-sky-500 hover:bg-sky-400" : "bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600")
                 }
               >
-                + Set
+                +
               </button>
             </div>
           ))}

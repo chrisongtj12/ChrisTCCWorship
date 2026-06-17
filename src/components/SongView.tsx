@@ -61,7 +61,13 @@ export function SongView({
         <h2 className="text-xl font-bold">{song.title}</h2>
         {song.artist && <span className="text-sm text-slate-400">{song.artist}</span>}
       </div>
-      {song.ccli && <div className="mb-3 text-xs text-slate-400">CCLI #{song.ccli}</div>}
+      {(song.ccli || song.tempo || song.time) && (
+        <div className="mb-3 text-xs text-slate-400">
+          {[song.time, song.tempo ? `${song.tempo} BPM` : "", song.ccli ? `CCLI #${song.ccli}` : ""]
+            .filter(Boolean)
+            .join("  ·  ")}
+        </div>
+      )}
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <Segmented

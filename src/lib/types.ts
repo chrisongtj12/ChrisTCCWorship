@@ -7,6 +7,8 @@ export type Song = {
   key: string | null;
   ccli: string | null;
   artist: string | null;
+  tempo: string | null;
+  time: string | null;
   choRaw: string | null;
   lyrics: Lyrics | null;
   sourceFiles: { cho: string | null; docx: string | null };
