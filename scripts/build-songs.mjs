@@ -1,5 +1,5 @@
-// Build step: compile /songs (*.cho + *.docx) into public/songs.json.
-// Pairs each ChordPro chart with its TCC lyric sheet by fuzzy title match.
+// Build step: compile /songs (charts + *.docx) into public/songs.json.
+// Charts: .cho/.txt/.chopro/.crd/.pro (ChordPro). Lyrics: .docx (TCC sheets).
 import { readdirSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join, basename, extname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -73,6 +73,20 @@ async function docxToText(path) {
 
 const IGNORE_SECTION = /^(more below|continued|cont'd|next|end)$/i;
 
+// A line is a section header if bracketed [..] OR an unbracketed keyword line
+// (e.g. "VERSE 1", "CHORUS", "PRE-CHORUS"). Returns a normalized label or null.
+const SECTION_RE =
+  /^(verse|chorus|pre[\s-]?chorus|prechorus|bridge|intro|outro|interlude|instrumental|turnaround|vamp|tag|refrain|ending|coda|hook|reprise)\b[\s.]*\d*[a-z]?\s*:?$/i;
+function titleCase(s) {
+  return s.toLowerCase().replace(/\b[a-z]/g, (m) => m.toUpperCase());
+}
+function detectSection(t) {
+  const b = t.match(/^\[(.+)\]$/);
+  if (b) return b[1].trim();
+  if (SECTION_RE.test(t)) return titleCase(t.replace(/:\s*$/, "").trim());
+  return null;
+}
+
 function parseLyrics(rawText) {
   const lines = rawText.replace(/\r\n/g, "\n").split("\n").map((l) => l.replace(/\s+$/, ""));
   const sections = [];
@@ -84,16 +98,15 @@ function parseLyrics(rawText) {
       if (current) current.lines.push("");
       continue;
     }
-    const sec = t.match(/^\[(.+)\]$/);
-    if (sec) {
-      const label = sec[1].trim();
+    const label = detectSection(t);
+    if (label !== null) {
       if (IGNORE_SECTION.test(label)) continue;
       current = { label, lines: [] };
       sections.push(current);
       continue;
     }
     if (!current) {
-      if (title === null) title = t;
+      if (title === null) title = t; // first pre-section line = title
       continue;
     }
     current.lines.push(t);
@@ -104,10 +117,12 @@ function parseLyrics(rawText) {
   return { title, sections };
 }
 
+const CHART_EXTS = new Set([".cho", ".txt", ".chopro", ".crd", ".pro"]);
+
 const files = readdirSync(SONGS_DIR);
-// ChordPro charts: .cho or .txt (SongSelect / Ultimate Guitar often save as .txt)
-const CHART_EXTS = new Set([".cho", ".txt"]);
-const choFiles = files.filter((f) => CHART_EXTS.has(extname(f).toLowerCase()));
+const choFiles = files
+  .filter((f) => CHART_EXTS.has(extname(f).toLowerCase()))
+  .sort(); // .cho sorts before .chopro, so it wins on duplicate titles
 const docxFiles = files.filter((f) => extname(f).toLowerCase() === ".docx" && !f.startsWith("~$"));
 
 const lyricEntries = [];
@@ -124,12 +139,15 @@ for (const f of docxFiles) {
 }
 
 const usedLyrics = new Set();
+const seenIds = new Set();
 const songs = [];
 
 for (const f of choFiles) {
   const raw = readFileSync(join(SONGS_DIR, f), "utf8");
   const cho = unwrap(raw);
-  const title = getDirective(cho, "title") || basename(f, ".cho");
+  const title = getDirective(cho, "title") || basename(f, extname(f));
+  const id = slugify(title);
+  if (seenIds.has(id)) continue; // skip duplicate chart (e.g. .cho + .chopro)
   const key = getDirective(cho, "key");
   const choTokens = tokenSet(title);
 
@@ -156,8 +174,9 @@ for (const f of choFiles) {
     usedLyrics.add(best.file);
   }
 
+  seenIds.add(id);
   songs.push({
-    id: slugify(title),
+    id,
     title,
     key: key || null,
     ccli: getDirective(cho, "ccli"),
@@ -171,8 +190,11 @@ for (const f of choFiles) {
 for (const le of lyricEntries) {
   if (usedLyrics.has(le.file)) continue;
   const title = le.data.title || le.stem;
+  const id = slugify(title);
+  if (seenIds.has(id)) continue;
+  seenIds.add(id);
   songs.push({
-    id: slugify(title),
+    id,
     title,
     key: null,
     ccli: null,

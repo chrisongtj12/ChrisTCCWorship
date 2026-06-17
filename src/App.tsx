@@ -28,14 +28,12 @@ export function App() {
       .catch((e) => setError(String(e)));
   }, []);
 
-  // React to share-link hash changes (and the viewer's "Open editor" link).
   useEffect(() => {
     const onHash = () => setShared(setlistFromHash());
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
 
-  // Persist the working setlist as a draft.
   useEffect(() => {
     saveDraft(set);
   }, [set]);
@@ -43,8 +41,9 @@ export function App() {
   const songs: Song[] = data?.songs ?? [];
 
   const addToSet = (songId: string) => {
+    // Stay on the Library tab so several songs can be added in a row;
+    // the "Setlist (n)" counter reflects the additions.
     setSet((s) => ({ ...s, entries: [...s.entries, newEntry(songId)] }));
-    setTab("setlist");
   };
 
   if (error)
@@ -55,7 +54,6 @@ export function App() {
     );
   if (!data) return <Centered>Loading…</Centered>;
 
-  // Shared read-only viewer mode.
   if (shared) return <SetlistViewer set={shared} songs={songs} />;
 
   return (
