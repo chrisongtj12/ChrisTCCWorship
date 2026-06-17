@@ -61,14 +61,25 @@ export function SongView({
   const [beat, setBeat] = useState(0);
   const beats = beatsFromTime(song.time);
 
+  // Free-text while editing; clamp/commit only on blur or Enter so a leading
+  // digit below the 30 minimum (e.g. the "1" of "120") isn't clamped away.
+  const [bpmInput, setBpmInput] = useState<string>(() => String(bpm));
+
   const changeBpm = (v: number) => {
     const c = Math.min(300, Math.max(30, v));
     setBpm(c);
+    setBpmInput(String(c));
     try {
       localStorage.setItem(bpmKey, String(c));
     } catch {
       /* ignore */
     }
+  };
+
+  const commitBpm = () => {
+    const n = parseInt(bpmInput, 10);
+    if (Number.isNaN(n)) setBpmInput(String(bpm)); // revert blank/garbage
+    else changeBpm(n);
   };
 
   const beatRef = useRef(0);
@@ -121,10 +132,15 @@ export function SongView({
           <span className="text-slate-500">BPM</span>
           <input
             type="number"
-            value={bpm}
+            value={bpmInput}
             min={30}
             max={300}
-            onChange={(e) => changeBpm(parseInt(e.target.value, 10) || 0)}
+            inputMode="numeric"
+            onChange={(e) => setBpmInput(e.target.value)}
+            onBlur={commitBpm}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+            }}
             className="w-16 rounded-md border border-slate-300 bg-white px-2 py-1 text-sm font-semibold tabular-nums dark:border-slate-600 dark:bg-slate-900"
           />
         </label>
