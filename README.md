@@ -8,7 +8,7 @@ A web app for preparing and leading worship at TCC. Holds each song's **ChordPro
 
 Drop files into the `songs/` folder, then rebuild:
 
-- **Chart:** a `.cho` file — standard ChordPro *or* a Just Chords export (the JSON-wrapped kind both work).
+- **Chart:** a `.cho` or `.txt` file — standard ChordPro *or* a Just Chords export (the JSON-wrapped kind both work).
 - **Lyrics:** the TCC `.docx` lyric sheet. Sections must be marked like `[Verse 1]`, `[Chorus]`.
 
 Charts and lyrics are paired automatically by title (spelling-insensitive, so *Savior/Saviour* and shortened titles still match). A song can have just a chart, just lyrics, or both.

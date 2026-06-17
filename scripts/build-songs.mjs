@@ -105,7 +105,9 @@ function parseLyrics(rawText) {
 }
 
 const files = readdirSync(SONGS_DIR);
-const choFiles = files.filter((f) => extname(f).toLowerCase() === ".cho");
+// ChordPro charts: .cho or .txt (SongSelect / Ultimate Guitar often save as .txt)
+const CHART_EXTS = new Set([".cho", ".txt"]);
+const choFiles = files.filter((f) => CHART_EXTS.has(extname(f).toLowerCase()));
 const docxFiles = files.filter((f) => extname(f).toLowerCase() === ".docx" && !f.startsWith("~$"));
 
 const lyricEntries = [];

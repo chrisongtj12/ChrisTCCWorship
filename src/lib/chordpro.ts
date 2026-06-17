@@ -237,3 +237,27 @@ function parseLyricLine(line: string): LineSegment[] {
   }
   return segments;
 }
+
+// ---- Section grouping (for setlist section-flow) --------------------------
+
+export type ChartSection = { label: string | null; lines: SongLine[] };
+
+/** Split a parsed chart into sections keyed by {comment} labels. */
+export function groupChartSections(chart: ChordChart): ChartSection[] {
+  const sections: ChartSection[] = [];
+  let current: ChartSection = { label: null, lines: [] };
+  const flush = () => {
+    const hasContent = current.lines.some((l) => l.type !== "blank");
+    if (current.label !== null || hasContent) sections.push(current);
+  };
+  for (const line of chart.lines) {
+    if (line.type === "section") {
+      flush();
+      current = { label: line.label, lines: [] };
+    } else {
+      current.lines.push(line);
+    }
+  }
+  flush();
+  return sections;
+}
