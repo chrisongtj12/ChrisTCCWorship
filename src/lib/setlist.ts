@@ -18,7 +18,22 @@ export type Setlist = {
   name: string;
   date: string;
   entries: SetEntry[];
+  // Short, unguessable id for the shared cue-notes store (E1). Travels inside
+  // the encoded share code, so a given share link maps to one notes locker.
+  shareId?: string;
 };
+
+export function makeShareId(): string {
+  try {
+    return crypto.randomUUID().replace(/-/g, "").slice(0, 12);
+  } catch {
+    return Math.random().toString(36).slice(2, 14);
+  }
+}
+
+export function ensureShareId(set: Setlist): Setlist {
+  return set.shareId ? set : { ...set, shareId: makeShareId() };
+}
 
 export function newEntry(songId: string): SetEntry {
   return { songId, transpose: 0, capo: 0, notation: "names", view: "chart", flow: null, note: "" };
@@ -32,12 +47,13 @@ export function emptySetlist(): Setlist {
 // [songId, transpose, capo, notation(0|1), view(0|1), flow(string[]|0), note]
 
 type WireEntry = [string, number, number, 0 | 1, 0 | 1, string[] | 0, string?];
-type Wire = { n: string; d: string; e: WireEntry[] };
+type Wire = { n: string; d: string; e: WireEntry[]; i?: string };
 
 function toWire(set: Setlist): Wire {
   return {
     n: set.name,
     d: set.date,
+    i: set.shareId, // undefined -> omitted by JSON.stringify
     e: set.entries.map((x) => [
       x.songId,
       x.transpose,
@@ -54,6 +70,7 @@ function fromWire(w: Wire): Setlist {
   return {
     name: w.n ?? "",
     date: w.d ?? "",
+    shareId: typeof w.i === "string" && w.i ? w.i : undefined,
     entries: (w.e ?? []).map((e) => ({
       songId: e[0],
       transpose: e[1] ?? 0,

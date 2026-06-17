@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Song } from "../lib/types.ts";
 import type { Setlist, SetEntry } from "../lib/setlist.ts";
 import { encodeSetlist } from "../lib/setlist.ts";
+import { fetchNotes, saveNote } from "../lib/notes.ts";
 import { transposeKey } from "../lib/chordpro.ts";
 import { availableSections } from "../lib/song.ts";
 import { SongView } from "./SongView.tsx";
@@ -28,6 +29,9 @@ export function SetlistViewer({ set, songs }: Props) {
 
   const [idx, setIdx] = useState(0);
   const [auto, setAuto] = useState(false);
+  // Shared cue-notes (E1): true once the server confirms the store is live.
+  const [notesSync, setNotesSync] = useState(false);
+  const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const [speed, setSpeed] = useState<number>(() => {
     const v = parseInt(localStorage.getItem("tcc.scrollspeed") || "40", 10);
     return Number.isNaN(v) ? 40 : v;
@@ -35,6 +39,28 @@ export function SetlistViewer({ set, songs }: Props) {
 
   const n = entries.length;
   const go = (next: number) => setIdx(() => Math.min(n - 1, Math.max(0, next)));
+
+  // On open, pull the shared notes for this set and overlay them (server wins).
+  useEffect(() => {
+    const id = set.shareId;
+    if (!id) return;
+    let cancelled = false;
+    fetchNotes(id).then(({ notes, enabled }) => {
+      if (cancelled) return;
+      setNotesSync(enabled);
+      if (enabled && notes && Object.keys(notes).length) {
+        setLiveSet((prev) => ({
+          ...prev,
+          entries: prev.entries.map((e) =>
+            typeof notes[e.songId] === "string" ? { ...e, note: notes[e.songId] } : e
+          ),
+        }));
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [set.shareId]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -85,7 +111,9 @@ export function SetlistViewer({ set, songs }: Props) {
     }
   };
 
-  // Edit a cue note for the entry at original index; persist into the URL hash.
+  // Edit a cue note for the entry at original index. Persist into the URL hash
+  // (local fallback + keeps the copyable link current) and, if this set has a
+  // shareId, save to the shared store (debounced) so everyone on the link sees it.
   const setNote = (origIdx: number, note: string) => {
     const next: Setlist = {
       ...liveSet,
@@ -96,6 +124,12 @@ export function SetlistViewer({ set, songs }: Props) {
       history.replaceState(null, "", "#s=" + encodeSetlist(next));
     } catch {
       /* ignore */
+    }
+    const id = liveSet.shareId;
+    const songId = liveSet.entries[origIdx]?.songId;
+    if (id && songId) {
+      clearTimeout(saveTimers.current[songId]);
+      saveTimers.current[songId] = setTimeout(() => saveNote(id, songId, note), 600);
     }
   };
 
@@ -169,6 +203,11 @@ export function SetlistViewer({ set, songs }: Props) {
             </button>
           </div>
           <span className="text-xs text-slate-400">← / → (or a foot pedal) change songs</span>
+          {notesSync && (
+            <span className="text-xs text-emerald-600 dark:text-emerald-400">
+              ✎ cue notes save &amp; sync for everyone on this link
+            </span>
+          )}
         </div>
 
         <div className="sm:flex sm:gap-4">

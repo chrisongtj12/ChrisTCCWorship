@@ -42,7 +42,13 @@ Deploy = commit + push (Vercel rebuilds). If you also edit songs on github.com, 
 - **`src/lib/song.ts`** — `availableSections(song)` (chart + lyric section labels, deduped).
 - **`src/lib/setlist.ts`** — Setlist types + **lz-string** URL encode/decode (default import:
   `import LZString from "lz-string"`), localStorage draft, named saved sets, export/import codes.
-  Wire format is a compact array per entry: `[songId, transpose, capo, notation, view, flow, note]`.
+  Wire format is a compact array per entry: `[songId, transpose, capo, notation, view, flow, note]`,
+  plus an optional `shareId` (`i` in the wire) — a short unguessable id for the shared cue-notes
+  store (see "Shared cue notes" below). `App.tsx` mints one once a draft has songs.
+- **`src/lib/notes.ts`** — client for the shared cue-notes store; `fetchNotes`/`saveNote` call
+  `/api/notes` and **degrade silently** (no endpoint / KV off → reads empty, writes no-op).
+- **`api/notes.js`** — Vercel serverless function (GET/PUT) backing the shared notes, keyed by
+  `shareId`, stored in Vercel KV / Upstash via its REST API (plain `fetch`, no npm dep).
 - **`src/lib/theme.ts`** — Light / Dark / Stage theme (class on `<html>`; no-flash init in `index.html`).
 
 ### Components (`src/components`)
@@ -60,15 +66,19 @@ Deploy = commit + push (Vercel rebuilds). If you also edit songs on github.com, 
 - `SectionFlowEditor.tsx` — set the running-order REMINDER (does NOT change the chart).
 - `SetlistViewer.tsx` — read-only performance view: song nav, **auto-scroll** (speed),
   **arrow-key / foot-pedal nav** (←/→, PageUp/Down), **Song order** column, editable cue
-  notes (persist into the URL hash), Print/PDF (all songs, ink-friendly), Stage theme.
+  notes (persist into the URL hash **and** sync via the shared store when `shareId` + KV are
+  present), Print/PDF (all songs, ink-friendly), Stage theme.
 
 ## Key design decisions (don't re-litigate without reason)
 
 1. **Song chart/lyrics are fixed** — always shown in full, natural order. The "song order"
    is only a REMINDER (a left column in the play view), never a transform of the chart.
-2. **No backend.** Library is the committed repo; setlists are URL-encoded (lz-string) so
+2. **Almost no backend.** Library is the committed repo; setlists are URL-encoded (lz-string) so
    share links work with no login. Saved sets + preferences are localStorage (per device);
-   Export/Import codes move them between devices.
+   Export/Import codes move them between devices. **One exception (E1):** *cue notes* can sync
+   across everyone on a share link via a tiny serverless function + Vercel KV — see "Shared cue
+   notes" below. It's notes-only and fully optional: the setlist itself still lives in the URL, so
+   links keep working even if KV is off/down.
 3. **Two views, not a merge** — chart and TCC lyrics stay separate (toggle), because TCC's
    wording/arrangement often differs from SongSelect.
 4. **Google Drive live-pull was explicitly skipped** (OAuth/setup friction); songs are added
@@ -80,6 +90,25 @@ Deploy = commit + push (Vercel rebuilds). If you also edit songs on github.com, 
 - lz-string must be imported as default then destructured (CJS interop).
 - `node_modules/` and `public/songs.json` are gitignored.
 - Build verifies with `npm run build` (runs `build:songs` → `tsc -b` → `vite build`).
+
+## Shared cue notes (E1) + Vercel KV setup
+
+Cue notes edited in the read-only Play view sync to everyone on the same share link.
+How it works: each set carries a `shareId` inside its encoded code; the viewer GETs notes
+on open (server overlays the link's notes) and PUTs on edit (debounced 600ms). Notes are
+keyed by `songId`, so a note follows its song regardless of running order. Open-edit (no
+login) — fine for the small team; protected by unguessable ids + size caps in `api/notes.js`.
+
+**To turn it on (one-time, in the Vercel dashboard):**
+1. Project → **Storage** → create a **KV** (Upstash Redis) store and connect it to this project.
+2. Vercel auto-injects `KV_REST_API_URL` and `KV_REST_API_TOKEN` env vars. Redeploy.
+3. That's it — the function reads those at runtime. **Until then it's a graceful no-op**
+   (GET returns empty + `disabled:true`, PUT does nothing), so the app behaves exactly as
+   before and nothing breaks. The "✎ cue notes save & sync…" hint only shows once KV is live.
+
+Notes: not testable under `vite dev` (Vite doesn't serve `/api`) — verify on a Vercel preview.
+Last-write-wins per song; no polling (loads on open). To move off Vercel KV later, repoint the
+two `fetch` calls in `api/notes.js` at any Redis/KV REST endpoint.
 
 ## Backlog / ideas not yet built
 - **Audible metronome** (Web Audio click) — currently visual light only.

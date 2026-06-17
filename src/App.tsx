@@ -4,6 +4,7 @@ import {
   type Setlist,
   newEntry,
   emptySetlist,
+  ensureShareId,
   loadDraft,
   saveDraft,
   setlistFromHash,
@@ -38,6 +39,12 @@ export function App() {
   useEffect(() => {
     saveDraft(set);
   }, [set]);
+
+  // Give the set a stable shareId as soon as it has songs, so share links and
+  // ▶ Play carry it and map to the same shared cue-notes locker.
+  useEffect(() => {
+    if (set.entries.length && !set.shareId) setSet((s) => ensureShareId(s));
+  }, [set.entries.length, set.shareId]);
 
   const songs: Song[] = data?.songs ?? [];
 
