@@ -3,5 +3,6 @@ dist
 .DS_Store
 *.local
 .vercel
+tsconfig.tsbuildinfo
 # generated at build time from /songs
 public/songs.json
