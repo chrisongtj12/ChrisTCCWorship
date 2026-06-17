@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Song } from "../lib/types.ts";
 import type { Setlist, SetEntry, Notation, View } from "../lib/setlist.ts";
-import { shareUrl } from "../lib/setlist.ts";
+import { shareUrl, encodeSetlist } from "../lib/setlist.ts";
 import { transposeKey } from "../lib/chordpro.ts";
 import { availableSections } from "../lib/song.ts";
 import { Segmented, Btn, CapoSelect } from "./ui.tsx";
@@ -42,6 +42,11 @@ export function SetlistBuilder({ songs, set, onChange }: Props) {
     } catch {
       /* clipboard blocked; the readonly field below still lets them copy */
     }
+  };
+
+  const play = () => {
+    // Open the read-only performance view of this set (same view the team gets).
+    window.location.hash = "s=" + encodeSetlist(set);
   };
 
   const link = set.entries.length ? shareUrl(set) : "";
@@ -182,6 +187,12 @@ export function SetlistBuilder({ songs, set, onChange }: Props) {
       {set.entries.length > 0 && (
         <div className="mt-5 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
           <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={play}
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+            >
+              ▶ Play set
+            </button>
             <button
               onClick={share}
               className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-500"
