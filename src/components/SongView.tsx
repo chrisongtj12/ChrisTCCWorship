@@ -14,6 +14,9 @@ type Props = {
   initialView?: View;
   note?: string;
   onNoteChange?: (v: string) => void;
+  // Fired only on an explicit Chart/Lyrics toggle (not auto-correction), so a
+  // parent can keep the chosen view "sticky" across songs.
+  onViewChange?: (v: View) => void;
 };
 
 const SCALE_KEY = "tcc.fontscale";
@@ -35,6 +38,7 @@ export function SongView({
   initialView = "chart",
   note,
   onNoteChange,
+  onViewChange,
 }: Props) {
   const hasChart = !!song.choRaw;
   const hasLyrics = !!song.lyrics;
@@ -172,7 +176,10 @@ export function SongView({
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <Segmented
           value={view}
-          onChange={(v) => setView(v as View)}
+          onChange={(v) => {
+            setView(v as View);
+            onViewChange?.(v as View);
+          }}
           options={[
             { value: "chart", label: "Chart", disabled: !hasChart },
             { value: "lyrics", label: "Lyrics", disabled: !hasLyrics },

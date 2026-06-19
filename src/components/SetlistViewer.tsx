@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Song } from "../lib/types.ts";
-import type { Setlist, SetEntry } from "../lib/setlist.ts";
+import type { Setlist, SetEntry, View } from "../lib/setlist.ts";
 import { encodeSetlist } from "../lib/setlist.ts";
 import { fetchNotes, saveNote } from "../lib/notes.ts";
 import { transposeKey } from "../lib/chordpro.ts";
@@ -32,6 +32,10 @@ export function SetlistViewer({ set, songs }: Props) {
   // Shared cue-notes (E1): true once the server confirms the store is live.
   const [notesSync, setNotesSync] = useState(false);
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  // Sticky Chart/Lyrics mode: seeded from the first song, then follows your
+  // explicit toggles so it carries across songs as you nav/swipe.
+  const [viewMode, setViewMode] = useState<View>(() => entries[0]?.e.view ?? "chart");
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
   const [speed, setSpeed] = useState<number>(() => {
     const v = parseInt(localStorage.getItem("tcc.scrollspeed") || "40", 10);
     return Number.isNaN(v) ? 40 : v;
@@ -100,6 +104,58 @@ export function SetlistViewer({ set, songs }: Props) {
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [auto, speed]);
+
+  // Keep the screen awake while leading (released on leaving the view / tab
+  // hidden; re-acquired when visible again). No-op where unsupported.
+  useEffect(() => {
+    let lock: { release: () => Promise<void> } | null = null;
+    let done = false;
+    const request = async () => {
+      try {
+        const wl = (navigator as unknown as { wakeLock?: { request: (t: string) => Promise<typeof lock> } }).wakeLock;
+        if (wl && document.visibilityState === "visible") lock = await wl.request("screen");
+      } catch {
+        /* ignore (unsupported / not visible) */
+      }
+    };
+    request();
+    const onVis = () => {
+      if (document.visibilityState === "visible" && !done) request();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      done = true;
+      document.removeEventListener("visibilitychange", onVis);
+      try {
+        lock?.release();
+      } catch {
+        /* ignore */
+      }
+    };
+  }, []);
+
+  // Swipe left → next song, right → prev. Only a mostly-horizontal drag past a
+  // threshold counts, so vertical reading-scroll and text selection are safe.
+  const onTouchStart = (e: React.TouchEvent) => {
+    const el = e.target as HTMLElement | null;
+    if (el && el.closest("input, textarea, select")) {
+      touchStart.current = null;
+      return;
+    }
+    const t = e.touches[0];
+    touchStart.current = { x: t.clientX, y: t.clientY };
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const s = touchStart.current;
+    touchStart.current = null;
+    if (!s) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - s.x;
+    const dy = t.clientY - s.y;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      go(dx < 0 ? idx + 1 : idx - 1);
+    }
+  };
 
   const changeSpeed = (d: number) => {
     const v = Math.min(200, Math.max(10, speed + d));
@@ -202,7 +258,7 @@ export function SetlistViewer({ set, songs }: Props) {
               +
             </button>
           </div>
-          <span className="text-xs text-slate-400">← / → (or a foot pedal) change songs</span>
+          <span className="text-xs text-slate-400">swipe · ← / → · foot pedal — change songs</span>
           {notesSync && (
             <span className="text-xs text-emerald-600 dark:text-emerald-400">
               ✎ cue notes save &amp; sync for everyone on this link
@@ -210,7 +266,7 @@ export function SetlistViewer({ set, songs }: Props) {
           )}
         </div>
 
-        <div className="sm:flex sm:gap-4">
+        <div className="sm:flex sm:gap-4" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
           {order.length > 0 && (
             <aside className="mb-3 sm:mb-0 sm:w-44 sm:shrink-0">
               <div className="rounded-xl bg-white p-3 shadow-sm dark:bg-slate-900 sm:sticky sm:top-4">
@@ -234,9 +290,10 @@ export function SetlistViewer({ set, songs }: Props) {
               initialTranspose={entry.transpose}
               initialCapo={entry.capo}
               initialNotation={entry.notation}
-              initialView={entry.view}
+              initialView={viewMode}
               note={entry.note}
               onNoteChange={(v) => setNote(origIdx, v)}
+              onViewChange={setViewMode}
             />
           </main>
         </div>

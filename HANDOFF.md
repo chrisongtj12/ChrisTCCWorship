@@ -65,7 +65,11 @@ Deploy = commit + push (Vercel rebuilds). If you also edit songs on github.com, 
   **Export/Import** saved sets, **Copy share link**, **▶ Play set**.
 - `SectionFlowEditor.tsx` — set the running-order REMINDER (does NOT change the chart).
 - `SetlistViewer.tsx` — read-only performance view: song nav, **auto-scroll** (speed),
-  **arrow-key / foot-pedal nav** (←/→, PageUp/Down), **Song order** column, editable cue
+  **arrow-key / foot-pedal nav** (←/→, PageUp/Down) + **swipe** (horizontal, threshold +
+  direction-locked so vertical scroll/selection is safe), **sticky Chart/Lyrics mode** that
+  carries across songs (lifted here; `SongView` reports explicit toggles via `onViewChange`),
+  **Wake Lock** to keep the screen awake (guarded; re-acquired on visibility),
+  **Song order** column, editable cue
   notes (persist into the URL hash **and** sync via the shared store when `shareId` + KV are
   present), Print/PDF (all songs, ink-friendly), Stage theme.
 
