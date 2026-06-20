@@ -52,9 +52,12 @@ Deploy = commit + push (Vercel rebuilds). If you also edit songs on github.com, 
 - **`src/lib/theme.ts`** — Light / Dark / Stage theme (class on `<html>`; no-flash init in `index.html`).
   The **Light** theme is the "Field Guide" skin (vintage natural-history plate): aged cream paper,
   sepia ink, crimson for selected/active UI, viridian teal for chords + links, antique gold for
-  section labels, EB Garamond serif headings. It's pure CSS in `index.css` scoped to
-  `html:not(.dark)` (remaps the slate/sky/emerald/amber utilities — no per-component edits), so
-  Dark + Stage are untouched. Font is loaded via a `<link>` in `index.html`.
+  section labels, EB Garamond serif headings (loaded via `<link>` in `index.html`). Colours/type
+  are CSS in `index.css` scoped to `html:not(.dark)` (remaps slate/sky/emerald/amber utilities).
+  The catalogue *structure* (butterfly masthead + "TCC Worship" wordmark + strapline, `No.` figure
+  numbers, circular key tags, italic attributions, hairline rows, letterpress pills) is real markup
+  gated by two classes: **`fg-only`** (shown in light, `display:none` in dark) and **`dark-only`**
+  (the reverse). So Dark + Stage render pixel-identical to before — verify by toggling.
 
 ### Components (`src/components`)
 - `App.tsx` — shell: loads `songs.json`, Library/Setlist tabs, theme toggle; if URL hash is

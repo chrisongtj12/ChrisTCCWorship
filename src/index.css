@@ -110,6 +110,71 @@ html:not(.dark) .bg-emerald-600,
 html:not(.dark) .bg-emerald-500 { background-color: var(--sage); }
 html:not(.dark) .hover\:bg-emerald-500:hover { background-color: var(--sage-hover); }
 
+/* ---- Field-guide structure (light only) -------------------------------
+   `fg-only` markup shows in light, hides in dark; `dark-only` the reverse —
+   so the catalogue motifs below never touch the Dark/Stage themes. */
+html.dark .fg-only { display: none !important; }
+html:not(.dark) .dark-only { display: none !important; }
+
+html:not(.dark) .fg-strap {
+  font-family: var(--fg-serif);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 11px;
+  color: var(--accent);
+}
+
+/* letterpress segmented pills (theme toggle, tabs, chart/lyrics, notation) */
+html:not(.dark) .fgseg { border-radius: 0 !important; }
+html:not(.dark) .fgseg > button {
+  border-radius: 0 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 11px;
+}
+
+/* collection list as a specimen catalogue */
+html:not(.dark) .fgnav { gap: 0; }
+html:not(.dark) .fgrow {
+  background: transparent !important;
+  border-radius: 0;
+  border-bottom: 1px solid var(--line);
+}
+html:not(.dark) .fgrow:hover { background: var(--paper-2) !important; }
+html:not(.dark) .fgrow.selected {
+  background: var(--paper-3) !important;
+  color: var(--ink-900) !important;
+  border-left: 3px solid var(--accent);
+}
+html:not(.dark) .fg-title { font-family: var(--fg-serif); font-weight: 500; font-size: 15px; }
+html:not(.dark) .fg-num {
+  font-family: var(--fg-serif);
+  font-size: 11px;
+  line-height: 1.05;
+  text-align: center;
+  color: var(--ink-400);
+}
+html:not(.dark) .fgrow.selected .fg-num { color: var(--accent); }
+html:not(.dark) .fg-attr { font-family: var(--fg-serif); font-style: italic; color: var(--ink-500); }
+html:not(.dark) .fg-keytag {
+  font-family: var(--fg-serif);
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex: 0 0 auto;
+}
+html:not(.dark) .fgrow.selected .fg-keytag { border-color: var(--accent); color: var(--accent); }
+html:not(.dark) .fgsearch { border-radius: 0; font-style: italic; }
+
+/* italic serif song title on the plate */
+html:not(.dark) .fg-songtitle { font-style: italic; }
+
 /* Stage mode: maximum contrast + larger text for a dim platform. */
 html.stage {
   font-size: 112.5%;

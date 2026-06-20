@@ -69,8 +69,15 @@ export function App() {
       <div className="mx-auto max-w-5xl px-4 py-4 sm:py-6">
         <header className="mb-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <h1 className="text-lg font-bold tracking-tight">TCC Setlist</h1>
-            <nav className="inline-flex rounded-lg border border-slate-200 p-0.5 dark:border-slate-700">
+            <ButterflyMark className="fg-only" />
+            <div className="mr-1">
+              <h1 className="text-xl font-bold leading-none tracking-tight">
+                <span className="fg-only">TCC Worship</span>
+                <span className="dark-only">TCC Setlist</span>
+              </h1>
+              <div className="fg-strap fg-only mt-1">A field guide to the setlist</div>
+            </div>
+            <nav className="fgseg inline-flex rounded-lg border border-slate-200 p-0.5 dark:border-slate-700">
               <TabBtn active={tab === "library"} onClick={() => setTab("library")}>
                 Library
               </TabBtn>
@@ -81,7 +88,10 @@ export function App() {
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <span className="hidden text-xs text-slate-400 sm:inline">{songs.length} songs</span>
+            <span className="hidden text-xs text-slate-400 sm:inline">
+              {songs.length} <span className="fg-only">specimens</span>
+              <span className="dark-only">songs</span>
+            </span>
           </div>
         </header>
 
@@ -92,6 +102,22 @@ export function App() {
         )}
       </div>
     </div>
+  );
+}
+
+function ButterflyMark({ className = "" }: { className?: string }) {
+  return (
+    <svg className={className} width="28" height="28" viewBox="0 0 26 26" aria-hidden="true">
+      <g fill="#2f6f5e">
+        <ellipse cx="9" cy="9" rx="6" ry="7.2" transform="rotate(-18 9 9)" />
+        <ellipse cx="17" cy="9" rx="6" ry="7.2" transform="rotate(18 17 9)" />
+      </g>
+      <g fill="#a4382b">
+        <ellipse cx="9.6" cy="17" rx="4.6" ry="5.2" transform="rotate(20 9.6 17)" />
+        <ellipse cx="16.4" cy="17" rx="4.6" ry="5.2" transform="rotate(-20 16.4 17)" />
+      </g>
+      <line x1="13" y1="5.5" x2="13" y2="20.5" stroke="#2c271d" strokeWidth="1.2" />
+    </svg>
   );
 }
 

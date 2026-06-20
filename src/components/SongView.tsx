@@ -120,7 +120,7 @@ export function SongView({
   return (
     <div>
       <div className="mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h2 className="text-xl font-bold">{song.title}</h2>
+        <h2 className="fg-songtitle text-xl font-bold">{song.title}</h2>
         {song.artist && <span className="text-sm text-slate-400">{song.artist}</span>}
       </div>
       {song.ccli && <div className="mb-2 text-xs text-slate-400">CCLI #{song.ccli}</div>}

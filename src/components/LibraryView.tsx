@@ -25,39 +25,56 @@ export function LibraryView({ songs, onAddToSet }: Props) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search songs…"
-          className="mb-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+          className="fgsearch mb-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
         />
-        <nav className="flex gap-2 overflow-x-auto sm:flex-col sm:overflow-visible">
-          {filtered.map((s) => (
-            <div
-              key={s.id}
-              className={
-                "shrink-0 rounded-lg sm:flex sm:items-center sm:justify-between " +
-                (s.id === selectedId
-                  ? "bg-sky-600 text-white"
-                  : "bg-white text-slate-700 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800")
-              }
-            >
-              <button onClick={() => setSelectedId(s.id)} className="flex-1 px-3 py-2 text-left text-sm">
-                <div className="font-medium">{s.title}</div>
-                <div className={"text-xs " + (s.id === selectedId ? "text-sky-100" : "text-slate-400")}>
-                  {s.key ?? "—"}
-                  {s.choRaw ? "" : " · lyrics only"}
-                  {s.lyrics ? "" : " · chart only"}
-                </div>
-              </button>
-              <button
-                onClick={() => onAddToSet(s.id)}
-                title="Add to setlist"
+        <nav className="fgnav flex gap-2 overflow-x-auto sm:flex-col sm:overflow-visible">
+          {filtered.map((s) => {
+            const num = String(songs.findIndex((x) => x.id === s.id) + 1).padStart(2, "0");
+            const selected = s.id === selectedId;
+            return (
+              <div
+                key={s.id}
                 className={
-                  "mr-2 hidden h-6 w-6 rounded text-sm leading-none sm:flex sm:items-center sm:justify-center " +
-                  (s.id === selectedId ? "bg-sky-500 hover:bg-sky-400" : "bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600")
+                  "fgrow shrink-0 rounded-lg sm:flex sm:items-center sm:justify-between " +
+                  (selected ? "selected " : "") +
+                  (selected
+                    ? "bg-sky-600 text-white"
+                    : "bg-white text-slate-700 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800")
                 }
               >
-                +
-              </button>
-            </div>
-          ))}
+                <button
+                  onClick={() => setSelectedId(s.id)}
+                  className="flex flex-1 items-center gap-3 px-3 py-2 text-left text-sm"
+                >
+                  <span className="fg-num fg-only w-7 shrink-0">
+                    No.
+                    <br />
+                    {num}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <div className="fg-title font-medium">{s.title}</div>
+                    <div className="fg-attr fg-only truncate text-xs">{s.artist ?? "—"}</div>
+                    <div className={"dark-only text-xs " + (selected ? "text-sky-100" : "text-slate-400")}>
+                      {s.key ?? "—"}
+                      {s.choRaw ? "" : " · lyrics only"}
+                      {s.lyrics ? "" : " · chart only"}
+                    </div>
+                  </span>
+                  <span className="fg-keytag fg-only">{s.key ?? "–"}</span>
+                </button>
+                <button
+                  onClick={() => onAddToSet(s.id)}
+                  title="Add to setlist"
+                  className={
+                    "mr-2 hidden h-6 w-6 rounded text-sm leading-none sm:flex sm:items-center sm:justify-center " +
+                    (selected ? "bg-sky-500 text-white hover:bg-sky-400" : "bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600")
+                  }
+                >
+                  +
+                </button>
+              </div>
+            );
+          })}
         </nav>
       </div>
 
