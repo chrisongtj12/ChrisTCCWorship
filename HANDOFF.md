@@ -50,6 +50,11 @@ Deploy = commit + push (Vercel rebuilds). If you also edit songs on github.com, 
 - **`api/notes.js`** — Vercel serverless function (GET/PUT) backing the shared notes, keyed by
   `shareId`, stored in Vercel KV / Upstash via its REST API (plain `fetch`, no npm dep).
 - **`src/lib/theme.ts`** — Light / Dark / Stage theme (class on `<html>`; no-flash init in `index.html`).
+  The **Light** theme is the "Field Guide" skin (vintage natural-history plate): aged cream paper,
+  sepia ink, crimson for selected/active UI, viridian teal for chords + links, antique gold for
+  section labels, EB Garamond serif headings. It's pure CSS in `index.css` scoped to
+  `html:not(.dark)` (remaps the slate/sky/emerald/amber utilities — no per-component edits), so
+  Dark + Stage are untouched. Font is loaded via a `<link>` in `index.html`.
 
 ### Components (`src/components`)
 - `App.tsx` — shell: loads `songs.json`, Library/Setlist tabs, theme toggle; if URL hash is

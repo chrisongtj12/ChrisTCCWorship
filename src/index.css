@@ -18,38 +18,52 @@ body {
 }
 
 /* =====================================================================
-   Light mode: cream paper + an artistic terracotta/sage pastel palette.
-   Scoped to html:not(.dark) so dark, stage, and print are untouched.
-   Remaps the slate/sky/emerald utilities the components already use, so
-   no per-component class changes are needed. Tweak the vars to taste.
+   Light mode = the "Field Guide" theme: aged cream paper, sepia ink, and
+   a restrained vintage-naturalist accent set (crimson for selected/active
+   UI, viridian teal for chords & links, antique gold for section labels),
+   with an old-style serif for focal headings. Scoped to html:not(.dark)
+   so dark, stage, and print are untouched. Remaps the slate/sky/emerald/
+   amber utilities the components already use — no per-component edits.
    ===================================================================== */
 html:not(.dark) {
-  --paper: #f7f0e1;        /* page background            (bg-slate-50)  */
-  --paper-card: #fffdf7;   /* cards / inputs             (bg-white)     */
-  --paper-2: #efe5d2;      /* subtle fills, tempo bar    (bg-slate-100) */
+  --paper: #f3ead4;        /* page background            (bg-slate-50)  */
+  --paper-card: #faf3e2;   /* cards / inputs             (bg-white)     */
+  --paper-2: #efe3c5;      /* subtle fills, tempo bar    (bg-slate-100) */
   --paper-3: #e6d8bf;      /* stronger fills             (bg-slate-200) */
-  --line: #e3d6bd;         /* hairline borders           (border-slate-200) */
-  --line-2: #d4c2a3;       /* borders                    (border-slate-300) */
+  --line: #d8c8a6;         /* hairline borders           (border-slate-200) */
+  --line-2: #cdbb95;       /* borders                    (border-slate-300) */
 
-  --ink-900: #392f25;      /* headings                   (text-slate-900) */
-  --ink-800: #463b2e;
-  --ink-700: #544838;
-  --ink-600: #6b5d49;      /* body                       (text-slate-600) */
-  --ink-500: #8a7c64;
-  --ink-400: #ab9c81;      /* muted / secondary          (text-slate-400) */
+  --ink-900: #2c271d;      /* headings                   (text-slate-900) */
+  --ink-800: #3a3326;
+  --ink-700: #4a4133;
+  --ink-600: #6a5e49;      /* body                       (text-slate-600) */
+  --ink-500: #8a7d62;
+  --ink-400: #a99a78;      /* muted / secondary          (text-slate-400) */
 
-  --accent: #a75d44;       /* terracotta — filled, white text (bg-sky-600) */
-  --accent-hover: #934f39;
-  --accent-soft: #d39e86;  /* pastel dots / soft fills        (bg-sky-300) */
-  --accent-text: #9a5236;  /* links / icon hover              (text-sky-600) */
-  --accent-ring: #c98e74;  /* focus ring / active border      (ring-sky-500) */
+  --accent: #a4382b;       /* crimson — selected/active fill  (bg-sky-600) */
+  --accent-hover: #8f2f24;
+  --accent-soft: #d99a8c;  /* soft fills / dots               (bg-sky-300) */
+  --accent-on: #ecd3cc;    /* light text on crimson           (text-sky-100) */
 
-  --sage: #6f9268;         /* secondary accent                (bg-emerald-600) */
-  --sage-hover: #5f8158;
+  --teal: #2f6f5e;         /* viridian — chord tokens + links (text-sky-600) */
+  --gold: #9a6a1f;         /* antique gold — section labels   (text-amber-600) */
+
+  --sage: #6f8a55;         /* secondary accent                (bg-emerald-600) */
+  --sage-hover: #5e7849;
+
+  --fg-serif: "EB Garamond", Georgia, "Times New Roman", serif;
 }
 
 html:not(.dark) body {
   background: var(--paper);
+}
+
+/* Old-style serif for focal headings (masthead + song titles). */
+html:not(.dark) h1,
+html:not(.dark) h2 {
+  font-family: var(--fg-serif);
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
 /* surfaces */
@@ -73,17 +87,23 @@ html:not(.dark) .text-slate-600 { color: var(--ink-600); }
 html:not(.dark) .text-slate-500 { color: var(--ink-500); }
 html:not(.dark) .text-slate-400 { color: var(--ink-400); }
 
-/* primary accent: blue -> terracotta */
+/* selected / active solid UI: blue -> crimson */
 html:not(.dark) .bg-sky-600,
 html:not(.dark) .bg-sky-500 { background-color: var(--accent); }
 html:not(.dark) .bg-sky-400,
 html:not(.dark) .bg-sky-300 { background-color: var(--accent-soft); }
 html:not(.dark) .hover\:bg-sky-500:hover,
 html:not(.dark) .hover\:bg-sky-400:hover { background-color: var(--accent-hover); }
-html:not(.dark) .text-sky-600 { color: var(--accent-text); }
-html:not(.dark) .hover\:text-sky-600:hover { color: var(--accent-text); }
-html:not(.dark) .ring-sky-500 { --tw-ring-color: var(--accent-ring); }
-html:not(.dark) .border-sky-400 { border-color: var(--accent-ring); }
+html:not(.dark) .text-sky-100 { color: var(--accent-on); }
+
+/* chord tokens + inline links: blue -> viridian teal */
+html:not(.dark) .text-sky-600 { color: var(--teal); }
+html:not(.dark) .hover\:text-sky-600:hover { color: var(--teal); }
+html:not(.dark) .ring-sky-500 { --tw-ring-color: var(--teal); }
+html:not(.dark) .border-sky-400 { border-color: var(--teal); }
+
+/* chart section labels: amber -> antique gold */
+html:not(.dark) .text-amber-600 { color: var(--gold); }
 
 /* secondary accent: emerald -> sage */
 html:not(.dark) .bg-emerald-600,
