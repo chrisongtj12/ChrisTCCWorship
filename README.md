@@ -22,6 +22,21 @@ npm run dev        # builds songs.json from /songs, then starts Vite
 
 Open the printed localhost URL.
 
+## Merge chords onto TCC lyrics (optional, AI)
+
+A song with both a chart and a TCC lyric sheet can have a third **"Both"** view —
+the chart's chords placed over TCC's exact wording (which often differs from the
+chart). Generate these once with Claude; they're committed and read at build time
+(no per-deploy API cost):
+
+```bash
+npm run build:songs                              # refresh public/songs.json first
+ANTHROPIC_API_KEY=sk-ant-...  npm run merge      # writes songs/merged/<id>.cho
+# flags: -- --force (re-merge all)   -- --id=<song-id> (one song)
+```
+
+Review the generated `songs/merged/*.cho`, commit them, then `npm run build`.
+
 ## Build / deploy
 
 ```bash

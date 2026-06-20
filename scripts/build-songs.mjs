@@ -7,7 +7,17 @@ import mammoth from "mammoth";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const SONGS_DIR = join(root, "songs");
+const MERGED_DIR = join(root, "songs", "merged");
 const OUT_DIR = join(root, "public");
+
+// AI-merged charts (chords over TCC wording), committed by `npm run merge`.
+function readMerged(id) {
+  try {
+    return readFileSync(join(MERGED_DIR, id + ".cho"), "utf8");
+  } catch {
+    return null;
+  }
+}
 
 function unwrap(raw) {
   const t = raw.trim();
@@ -185,6 +195,7 @@ for (const f of choFiles) {
     time: getDirective(cho, "time"),
     choRaw: cho,
     lyrics,
+    merged: readMerged(id),
     sourceFiles: { cho: f, docx: lyrics ? best.file : null },
   });
 }
@@ -205,6 +216,7 @@ for (const le of lyricEntries) {
     time: null,
     choRaw: null,
     lyrics: le.data,
+    merged: null,
     sourceFiles: { cho: null, docx: le.file },
   });
 }

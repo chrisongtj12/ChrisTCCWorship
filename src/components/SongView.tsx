@@ -42,8 +42,10 @@ export function SongView({
 }: Props) {
   const hasChart = !!song.choRaw;
   const hasLyrics = !!song.lyrics;
+  const hasMerged = !!song.merged;
 
-  const [view, setView] = useState<View>(hasChart ? initialView : "lyrics");
+  // "combined" = the AI-merged chart (chords over TCC wording); only offered when present.
+  const [view, setView] = useState<View | "combined">(hasChart ? initialView : "lyrics");
   const [transpose, setTranspose] = useState(initialTranspose);
   const [capo, setCapo] = useState(initialCapo);
   const [notation, setNotation] = useState<Notation>(initialNotation);
@@ -113,7 +115,8 @@ export function SongView({
   useEffect(() => {
     if (view === "chart" && !hasChart) setView("lyrics");
     if (view === "lyrics" && !hasLyrics) setView("chart");
-  }, [view, hasChart, hasLyrics]);
+    if (view === "combined" && !hasMerged) setView(hasChart ? "chart" : "lyrics");
+  }, [view, hasChart, hasLyrics, hasMerged]);
 
   const soundingKey = song.key ? transposeKey(song.key, transpose) : null;
 
@@ -177,12 +180,13 @@ export function SongView({
         <Segmented
           value={view}
           onChange={(v) => {
-            setView(v as View);
-            onViewChange?.(v as View);
+            setView(v as View | "combined");
+            if (v !== "combined") onViewChange?.(v as View);
           }}
           options={[
             { value: "chart", label: "Chart", disabled: !hasChart },
             { value: "lyrics", label: "Lyrics", disabled: !hasLyrics },
+            ...(hasMerged ? [{ value: "combined", label: "Both" }] : []),
           ]}
         />
 
@@ -196,7 +200,7 @@ export function SongView({
           </Btn>
         </div>
 
-        {view === "chart" && hasChart && (
+        {view !== "lyrics" && (
           <>
             <div className="flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700">
               <Btn onClick={() => setTranspose((t) => t - 1)} aria="transpose down">
@@ -242,14 +246,16 @@ export function SongView({
         />
       )}
 
-      {view === "chart" && capo > 0 && hasChart && (
+      {view !== "lyrics" && capo > 0 && (
         <div className="mb-3 text-xs text-slate-400">
           Capo {capo} — shapes in {song.key ? transposeKey(song.key, transpose - capo) : "?"}, sounding in {soundingKey}.
         </div>
       )}
 
       <div className="overflow-x-auto" style={{ zoom: scale } as React.CSSProperties}>
-        {view === "chart" && hasChart ? (
+        {view === "combined" && hasMerged ? (
+          <ChartView choRaw={song.merged!} originalKey={song.key} transpose={transpose} capo={capo} notation={notation} />
+        ) : view === "chart" && hasChart ? (
           <ChartView choRaw={song.choRaw!} originalKey={song.key} transpose={transpose} capo={capo} notation={notation} />
         ) : hasLyrics ? (
           <LyricsView lyrics={song.lyrics!} />
