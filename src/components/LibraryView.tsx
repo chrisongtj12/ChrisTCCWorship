@@ -44,7 +44,7 @@ export function LibraryView({ songs, onAddToSet }: Props) {
               >
                 <button
                   onClick={() => setSelectedId(s.id)}
-                  className="flex flex-1 items-center gap-3 px-3 py-2 text-left text-sm"
+                  className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2 text-left text-sm"
                 >
                   <span className="fg-num fg-only w-7 shrink-0">
                     No.
@@ -60,18 +60,20 @@ export function LibraryView({ songs, onAddToSet }: Props) {
                       {s.lyrics ? "" : " · chart only"}
                     </div>
                   </span>
+                </button>
+                <div className="flex shrink-0 items-center gap-2 pr-2">
                   <span className="fg-keytag fg-only">{s.key ?? "–"}</span>
-                </button>
-                <button
-                  onClick={() => onAddToSet(s.id)}
-                  title="Add to setlist"
-                  className={
-                    "mr-2 hidden h-6 w-6 rounded text-sm leading-none sm:flex sm:items-center sm:justify-center " +
-                    (selected ? "bg-sky-500 text-white hover:bg-sky-400" : "bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600")
-                  }
-                >
-                  +
-                </button>
+                  <button
+                    onClick={() => onAddToSet(s.id)}
+                    title="Add to setlist"
+                    className={
+                      "hidden h-6 w-6 rounded text-sm leading-none sm:flex sm:items-center sm:justify-center " +
+                      (selected ? "bg-sky-500 text-white hover:bg-sky-400" : "bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600")
+                    }
+                  >
+                    +
+                  </button>
+                </div>
               </div>
             );
           })}

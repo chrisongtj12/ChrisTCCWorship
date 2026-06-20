@@ -18,55 +18,86 @@ body {
 }
 
 /* =====================================================================
-   Light mode = the "Field Guide" theme: aged cream paper, sepia ink, and
-   a restrained vintage-naturalist accent set (crimson for selected/active
-   UI, viridian teal for chords & links, antique gold for section labels),
-   with an old-style serif for focal headings. Scoped to html:not(.dark)
-   so dark, stage, and print are untouched. Remaps the slate/sky/emerald/
-   amber utilities the components already use — no per-component edits.
+   The "Field Guide" theme (vintage natural-history plate). Both Light and
+   Dark get it: Light on aged cream paper, Dark on warm sepia-black, while
+   Stage stays the original max-contrast performance mode (untouched).
+   Colour/type tokens are defined per mode; the catalogue motifs are shared
+   markup gated by fg-only/dark-only. Remaps the slate/sky/emerald/amber
+   utilities the components already use (no per-component CSS).
    ===================================================================== */
 html:not(.dark) {
-  --paper: #f3ead4;        /* page background            (bg-slate-50)  */
-  --paper-card: #faf3e2;   /* cards / inputs             (bg-white)     */
-  --paper-2: #efe3c5;      /* subtle fills, tempo bar    (bg-slate-100) */
-  --paper-3: #e6d8bf;      /* stronger fills             (bg-slate-200) */
-  --line: #d8c8a6;         /* hairline borders           (border-slate-200) */
-  --line-2: #cdbb95;       /* borders                    (border-slate-300) */
+  --paper: #f3ead4;
+  --paper-card: #faf3e2;
+  --paper-2: #efe3c5;
+  --paper-3: #e6d8bf;
+  --line: #d8c8a6;
+  --line-2: #cdbb95;
 
-  --ink-900: #2c271d;      /* headings                   (text-slate-900) */
+  --ink-900: #2c271d;
   --ink-800: #3a3326;
   --ink-700: #4a4133;
-  --ink-600: #6a5e49;      /* body                       (text-slate-600) */
+  --ink-600: #6a5e49;
   --ink-500: #8a7d62;
-  --ink-400: #a99a78;      /* muted / secondary          (text-slate-400) */
+  --ink-400: #a99a78;
 
-  --accent: #a4382b;       /* crimson — selected/active fill  (bg-sky-600) */
+  --accent: #a4382b;       /* crimson - selected/active fill */
   --accent-hover: #8f2f24;
-  --accent-soft: #d99a8c;  /* soft fills / dots               (bg-sky-300) */
-  --accent-on: #ecd3cc;    /* light text on crimson           (text-sky-100) */
+  --accent-soft: #d99a8c;
+  --accent-on: #ecd3cc;
 
-  --teal: #2f6f5e;         /* viridian — chord tokens + links (text-sky-600) */
-  --gold: #9a6a1f;         /* antique gold — section labels   (text-amber-600) */
+  --teal: #2f6f5e;         /* viridian - chords + links */
+  --gold: #9a6a1f;         /* antique gold - section labels */
 
-  --sage: #6f8a55;         /* secondary accent                (bg-emerald-600) */
+  --sage: #6f8a55;
   --sage-hover: #5e7849;
+}
 
+/* Dark Field Guide: warm sepia-black paper, parchment ink. Excludes stage. */
+html.dark:not(.stage) {
+  --paper: #211c15;
+  --paper-card: #2a241b;
+  --paper-2: #342d22;
+  --paper-3: #3e3527;
+  --line: #4a4030;
+  --line-2: #5a4e3a;
+
+  --ink-900: #f0e6cf;
+  --ink-800: #e6dcc4;
+  --ink-700: #d6cbb0;
+  --ink-600: #c0b495;
+  --ink-500: #a99c7d;
+  --ink-400: #8f8366;
+
+  --accent: #c25a48;
+  --accent-hover: #d06a57;
+  --accent-soft: #6e3328;
+  --accent-on: #f0d9d2;
+
+  --teal: #5fb89f;
+  --gold: #c9a24f;
+
+  --sage: #8aa56a;
+  --sage-hover: #9ab47a;
+}
+
+html:not(.stage) {
   --fg-serif: "EB Garamond", Georgia, "Times New Roman", serif;
 }
 
-html:not(.dark) body {
+html:not(.dark) body,
+html.dark:not(.stage) body {
   background: var(--paper);
 }
 
 /* Old-style serif for focal headings (masthead + song titles). */
-html:not(.dark) h1,
-html:not(.dark) h2 {
+html:not(.stage) h1,
+html:not(.stage) h2 {
   font-family: var(--fg-serif);
   font-weight: 600;
   letter-spacing: 0.01em;
 }
 
-/* surfaces */
+/* ---- Light remap: base slate utilities -------------------------------- */
 html:not(.dark) .bg-slate-50 { background-color: var(--paper); }
 html:not(.dark) .bg-white { background-color: var(--paper-card); }
 html:not(.dark) .bg-slate-100 { background-color: var(--paper-2); }
@@ -74,12 +105,8 @@ html:not(.dark) .bg-slate-200,
 html:not(.dark) .bg-slate-300 { background-color: var(--paper-3); }
 html:not(.dark) .hover\:bg-slate-100:hover { background-color: var(--paper-2); }
 html:not(.dark) .hover\:bg-slate-300:hover { background-color: var(--paper-3); }
-
-/* borders */
 html:not(.dark) .border-slate-200 { border-color: var(--line); }
 html:not(.dark) .border-slate-300 { border-color: var(--line-2); }
-
-/* ink */
 html:not(.dark) .text-slate-900 { color: var(--ink-900); }
 html:not(.dark) .text-slate-800 { color: var(--ink-800); }
 html:not(.dark) .text-slate-700 { color: var(--ink-700); }
@@ -87,36 +114,48 @@ html:not(.dark) .text-slate-600 { color: var(--ink-600); }
 html:not(.dark) .text-slate-500 { color: var(--ink-500); }
 html:not(.dark) .text-slate-400 { color: var(--ink-400); }
 
-/* selected / active solid UI: blue -> crimson */
-html:not(.dark) .bg-sky-600,
-html:not(.dark) .bg-sky-500 { background-color: var(--accent); }
-html:not(.dark) .bg-sky-400,
-html:not(.dark) .bg-sky-300 { background-color: var(--accent-soft); }
-html:not(.dark) .hover\:bg-sky-500:hover,
-html:not(.dark) .hover\:bg-sky-400:hover { background-color: var(--accent-hover); }
-html:not(.dark) .text-sky-100 { color: var(--accent-on); }
+/* ---- Dark remap: the dark: variant utilities (excludes stage) --------- */
+html.dark:not(.stage) .dark\:bg-slate-950 { background-color: var(--paper); }
+html.dark:not(.stage) .dark\:bg-slate-900 { background-color: var(--paper-card); }
+html.dark:not(.stage) .dark\:bg-slate-800 { background-color: var(--paper-2); }
+html.dark:not(.stage) .dark\:bg-slate-700 { background-color: var(--paper-3); }
+html.dark:not(.stage) .dark\:hover\:bg-slate-800:hover { background-color: var(--paper-2); }
+html.dark:not(.stage) .dark\:hover\:bg-slate-600:hover { background-color: var(--paper-3); }
+html.dark:not(.stage) .dark\:border-slate-700 { border-color: var(--line); }
+html.dark:not(.stage) .dark\:border-slate-600 { border-color: var(--line-2); }
+html.dark:not(.stage) .dark\:text-slate-100 { color: var(--ink-900); }
+html.dark:not(.stage) .dark\:text-slate-200 { color: var(--ink-800); }
+html.dark:not(.stage) .dark\:text-slate-300 { color: var(--ink-700); }
+html.dark:not(.stage) .dark\:text-slate-500 { color: var(--ink-500); }
+html.dark:not(.stage) .dark\:text-slate-600 { color: var(--ink-500); }
+html.dark:not(.stage) .dark\:text-sky-400 { color: var(--teal); }
+html.dark:not(.stage) .dark\:text-amber-400 { color: var(--gold); }
+html.dark:not(.stage) .dark\:text-emerald-400 { color: var(--sage); }
 
-/* chord tokens + inline links: blue -> viridian teal */
-html:not(.dark) .text-sky-600 { color: var(--teal); }
-html:not(.dark) .hover\:text-sky-600:hover { color: var(--teal); }
-html:not(.dark) .ring-sky-500 { --tw-ring-color: var(--teal); }
-html:not(.dark) .border-sky-400 { border-color: var(--teal); }
+/* ---- Accents (both Field Guide modes; never in stage) ----------------- */
+html:not(.stage) .bg-sky-600,
+html:not(.stage) .bg-sky-500 { background-color: var(--accent); }
+html:not(.stage) .bg-sky-400,
+html:not(.stage) .bg-sky-300 { background-color: var(--accent-soft); }
+html:not(.stage) .hover\:bg-sky-500:hover,
+html:not(.stage) .hover\:bg-sky-400:hover { background-color: var(--accent-hover); }
+html:not(.stage) .text-sky-100 { color: var(--accent-on); }
+html:not(.stage) .text-sky-600 { color: var(--teal); }
+html:not(.stage) .hover\:text-sky-600:hover { color: var(--teal); }
+html:not(.stage) .ring-sky-500 { --tw-ring-color: var(--teal); }
+html:not(.stage) .border-sky-400 { border-color: var(--teal); }
+html:not(.stage) .text-amber-600 { color: var(--gold); }
+html:not(.stage) .bg-emerald-600,
+html:not(.stage) .bg-emerald-500 { background-color: var(--sage); }
+html:not(.stage) .hover\:bg-emerald-500:hover { background-color: var(--sage-hover); }
 
-/* chart section labels: amber -> antique gold */
-html:not(.dark) .text-amber-600 { color: var(--gold); }
+/* ---- Field-guide structure (Light + Dark; hidden in Stage) ------------
+   fg-only shows in the Field Guide modes; dark-only only in Stage, which
+   keeps the original wording/markup. */
+html.stage .fg-only { display: none !important; }
+html:not(.stage) .dark-only { display: none !important; }
 
-/* secondary accent: emerald -> sage */
-html:not(.dark) .bg-emerald-600,
-html:not(.dark) .bg-emerald-500 { background-color: var(--sage); }
-html:not(.dark) .hover\:bg-emerald-500:hover { background-color: var(--sage-hover); }
-
-/* ---- Field-guide structure (light only) -------------------------------
-   `fg-only` markup shows in light, hides in dark; `dark-only` the reverse —
-   so the catalogue motifs below never touch the Dark/Stage themes. */
-html.dark .fg-only { display: none !important; }
-html:not(.dark) .dark-only { display: none !important; }
-
-html:not(.dark) .fg-strap {
+html:not(.stage) .fg-strap {
   font-family: var(--fg-serif);
   text-transform: uppercase;
   letter-spacing: 0.2em;
@@ -125,8 +164,8 @@ html:not(.dark) .fg-strap {
 }
 
 /* letterpress segmented pills (theme toggle, tabs, chart/lyrics, notation) */
-html:not(.dark) .fgseg { border-radius: 0 !important; }
-html:not(.dark) .fgseg > button {
+html:not(.stage) .fgseg { border-radius: 0 !important; }
+html:not(.stage) .fgseg > button {
   border-radius: 0 !important;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -134,29 +173,29 @@ html:not(.dark) .fgseg > button {
 }
 
 /* collection list as a specimen catalogue */
-html:not(.dark) .fgnav { gap: 0; }
-html:not(.dark) .fgrow {
+html:not(.stage) .fgnav { gap: 0; }
+html:not(.stage) .fgrow {
   background: transparent !important;
   border-radius: 0;
   border-bottom: 1px solid var(--line);
 }
-html:not(.dark) .fgrow:hover { background: var(--paper-2) !important; }
-html:not(.dark) .fgrow.selected {
+html:not(.stage) .fgrow:hover { background: var(--paper-2) !important; }
+html:not(.stage) .fgrow.selected {
   background: var(--paper-3) !important;
   color: var(--ink-900) !important;
   border-left: 3px solid var(--accent);
 }
-html:not(.dark) .fg-title { font-family: var(--fg-serif); font-weight: 500; font-size: 15px; }
-html:not(.dark) .fg-num {
+html:not(.stage) .fg-title { font-family: var(--fg-serif); font-weight: 500; font-size: 15px; }
+html:not(.stage) .fg-num {
   font-family: var(--fg-serif);
   font-size: 11px;
   line-height: 1.05;
   text-align: center;
   color: var(--ink-400);
 }
-html:not(.dark) .fgrow.selected .fg-num { color: var(--accent); }
-html:not(.dark) .fg-attr { font-family: var(--fg-serif); font-style: italic; color: var(--ink-500); }
-html:not(.dark) .fg-keytag {
+html:not(.stage) .fgrow.selected .fg-num { color: var(--accent); }
+html:not(.stage) .fg-attr { font-family: var(--fg-serif); font-style: italic; color: var(--ink-500); }
+html:not(.stage) .fg-keytag {
   font-family: var(--fg-serif);
   width: 26px;
   height: 26px;
@@ -169,11 +208,11 @@ html:not(.dark) .fg-keytag {
   font-size: 13px;
   flex: 0 0 auto;
 }
-html:not(.dark) .fgrow.selected .fg-keytag { border-color: var(--accent); color: var(--accent); }
-html:not(.dark) .fgsearch { border-radius: 0; font-style: italic; }
+html:not(.stage) .fgrow.selected .fg-keytag { border-color: var(--accent); color: var(--accent); }
+html:not(.stage) .fgsearch { border-radius: 0; font-style: italic; }
 
 /* italic serif song title on the plate */
-html:not(.dark) .fg-songtitle { font-style: italic; }
+html:not(.stage) .fg-songtitle { font-style: italic; }
 
 /* Stage mode: maximum contrast + larger text for a dim platform. */
 html.stage {
