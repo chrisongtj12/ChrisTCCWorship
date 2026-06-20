@@ -19,8 +19,7 @@ body {
 
 /* =====================================================================
    The "Field Guide" theme (vintage natural-history plate). Both Light and
-   Dark get it: Light on aged cream paper, Dark on warm sepia-black, while
-   Stage stays the original max-contrast performance mode (untouched).
+   Dark get it (Light on aged cream paper, Dark + Stage on warm sepia-black).
    Colour/type tokens are defined per mode; the catalogue motifs are shared
    markup gated by fg-only/dark-only. Remaps the slate/sky/emerald/amber
    utilities the components already use (no per-component CSS).
@@ -52,8 +51,8 @@ html:not(.dark) {
   --sage-hover: #5e7849;
 }
 
-/* Dark Field Guide: warm sepia-black paper, parchment ink. Excludes stage. */
-html.dark:not(.stage) {
+/* Dark Field Guide: warm sepia-black paper, parchment ink (applies to Dark + Stage). */
+html.dark {
   --paper: #211c15;
   --paper-card: #2a241b;
   --paper-2: #342d22;
@@ -80,18 +79,18 @@ html.dark:not(.stage) {
   --sage-hover: #9ab47a;
 }
 
-html:not(.stage) {
+html {
   --fg-serif: "EB Garamond", Georgia, "Times New Roman", serif;
 }
 
 html:not(.dark) body,
-html.dark:not(.stage) body {
+html.dark body {
   background: var(--paper);
 }
 
 /* Old-style serif for focal headings (masthead + song titles). */
-html:not(.stage) h1,
-html:not(.stage) h2 {
+html h1,
+html h2 {
   font-family: var(--fg-serif);
   font-weight: 600;
   letter-spacing: 0.01em;
@@ -114,48 +113,45 @@ html:not(.dark) .text-slate-600 { color: var(--ink-600); }
 html:not(.dark) .text-slate-500 { color: var(--ink-500); }
 html:not(.dark) .text-slate-400 { color: var(--ink-400); }
 
-/* ---- Dark remap: the dark: variant utilities (excludes stage) --------- */
-html.dark:not(.stage) .dark\:bg-slate-950 { background-color: var(--paper); }
-html.dark:not(.stage) .dark\:bg-slate-900 { background-color: var(--paper-card); }
-html.dark:not(.stage) .dark\:bg-slate-800 { background-color: var(--paper-2); }
-html.dark:not(.stage) .dark\:bg-slate-700 { background-color: var(--paper-3); }
-html.dark:not(.stage) .dark\:hover\:bg-slate-800:hover { background-color: var(--paper-2); }
-html.dark:not(.stage) .dark\:hover\:bg-slate-600:hover { background-color: var(--paper-3); }
-html.dark:not(.stage) .dark\:border-slate-700 { border-color: var(--line); }
-html.dark:not(.stage) .dark\:border-slate-600 { border-color: var(--line-2); }
-html.dark:not(.stage) .dark\:text-slate-100 { color: var(--ink-900); }
-html.dark:not(.stage) .dark\:text-slate-200 { color: var(--ink-800); }
-html.dark:not(.stage) .dark\:text-slate-300 { color: var(--ink-700); }
-html.dark:not(.stage) .dark\:text-slate-500 { color: var(--ink-500); }
-html.dark:not(.stage) .dark\:text-slate-600 { color: var(--ink-500); }
-html.dark:not(.stage) .dark\:text-sky-400 { color: var(--teal); }
-html.dark:not(.stage) .dark\:text-amber-400 { color: var(--gold); }
-html.dark:not(.stage) .dark\:text-emerald-400 { color: var(--sage); }
+/* ---- Dark remap: the dark: variant utilities (Dark + Stage) ----------- */
+html.dark .dark\:bg-slate-950 { background-color: var(--paper); }
+html.dark .dark\:bg-slate-900 { background-color: var(--paper-card); }
+html.dark .dark\:bg-slate-800 { background-color: var(--paper-2); }
+html.dark .dark\:bg-slate-700 { background-color: var(--paper-3); }
+html.dark .dark\:hover\:bg-slate-800:hover { background-color: var(--paper-2); }
+html.dark .dark\:hover\:bg-slate-600:hover { background-color: var(--paper-3); }
+html.dark .dark\:border-slate-700 { border-color: var(--line); }
+html.dark .dark\:border-slate-600 { border-color: var(--line-2); }
+html.dark .dark\:text-slate-100 { color: var(--ink-900); }
+html.dark .dark\:text-slate-200 { color: var(--ink-800); }
+html.dark .dark\:text-slate-300 { color: var(--ink-700); }
+html.dark .dark\:text-slate-500 { color: var(--ink-500); }
+html.dark .dark\:text-slate-600 { color: var(--ink-500); }
+html.dark .dark\:text-sky-400 { color: var(--teal); }
+html.dark .dark\:text-amber-400 { color: var(--gold); }
+html.dark .dark\:text-emerald-400 { color: var(--sage); }
 
-/* ---- Accents (both Field Guide modes; never in stage) ----------------- */
-html:not(.stage) .bg-sky-600,
-html:not(.stage) .bg-sky-500 { background-color: var(--accent); }
-html:not(.stage) .bg-sky-400,
-html:not(.stage) .bg-sky-300 { background-color: var(--accent-soft); }
-html:not(.stage) .hover\:bg-sky-500:hover,
-html:not(.stage) .hover\:bg-sky-400:hover { background-color: var(--accent-hover); }
-html:not(.stage) .text-sky-100 { color: var(--accent-on); }
-html:not(.stage) .text-sky-600 { color: var(--teal); }
-html:not(.stage) .hover\:text-sky-600:hover { color: var(--teal); }
-html:not(.stage) .ring-sky-500 { --tw-ring-color: var(--teal); }
-html:not(.stage) .border-sky-400 { border-color: var(--teal); }
-html:not(.stage) .text-amber-600 { color: var(--gold); }
-html:not(.stage) .bg-emerald-600,
-html:not(.stage) .bg-emerald-500 { background-color: var(--sage); }
-html:not(.stage) .hover\:bg-emerald-500:hover { background-color: var(--sage-hover); }
+/* ---- Accents (all modes) --------------------------------------------- */
+html .bg-sky-600,
+html .bg-sky-500 { background-color: var(--accent); }
+html .bg-sky-400,
+html .bg-sky-300 { background-color: var(--accent-soft); }
+html .hover\:bg-sky-500:hover,
+html .hover\:bg-sky-400:hover { background-color: var(--accent-hover); }
+html .text-sky-100 { color: var(--accent-on); }
+html .text-sky-600 { color: var(--teal); }
+html .hover\:text-sky-600:hover { color: var(--teal); }
+html .ring-sky-500 { --tw-ring-color: var(--teal); }
+html .border-sky-400 { border-color: var(--teal); }
+html .text-amber-600 { color: var(--gold); }
+html .bg-emerald-600,
+html .bg-emerald-500 { background-color: var(--sage); }
+html .hover\:bg-emerald-500:hover { background-color: var(--sage-hover); }
 
-/* ---- Field-guide structure (Light + Dark; hidden in Stage) ------------
-   fg-only shows in the Field Guide modes; dark-only only in Stage, which
-   keeps the original wording/markup. */
-html.stage .fg-only { display: none !important; }
-html:not(.stage) .dark-only { display: none !important; }
+/* ---- Field-guide structure (all modes). dark-only markup is now unused. */
+html .dark-only { display: none !important; }
 
-html:not(.stage) .fg-strap {
+html .fg-strap {
   font-family: var(--fg-serif);
   text-transform: uppercase;
   letter-spacing: 0.2em;
@@ -164,8 +160,8 @@ html:not(.stage) .fg-strap {
 }
 
 /* letterpress segmented pills (theme toggle, tabs, chart/lyrics, notation) */
-html:not(.stage) .fgseg { border-radius: 0 !important; }
-html:not(.stage) .fgseg > button {
+html .fgseg { border-radius: 0 !important; }
+html .fgseg > button {
   border-radius: 0 !important;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -173,29 +169,29 @@ html:not(.stage) .fgseg > button {
 }
 
 /* collection list as a specimen catalogue */
-html:not(.stage) .fgnav { gap: 0; }
-html:not(.stage) .fgrow {
+html .fgnav { gap: 0; }
+html .fgrow {
   background: transparent !important;
   border-radius: 0;
   border-bottom: 1px solid var(--line);
 }
-html:not(.stage) .fgrow:hover { background: var(--paper-2) !important; }
-html:not(.stage) .fgrow.selected {
+html .fgrow:hover { background: var(--paper-2) !important; }
+html .fgrow.selected {
   background: var(--paper-3) !important;
   color: var(--ink-900) !important;
   border-left: 3px solid var(--accent);
 }
-html:not(.stage) .fg-title { font-family: var(--fg-serif); font-weight: 500; font-size: 15px; }
-html:not(.stage) .fg-num {
+html .fg-title { font-family: var(--fg-serif); font-weight: 500; font-size: 15px; }
+html .fg-num {
   font-family: var(--fg-serif);
   font-size: 11px;
   line-height: 1.05;
   text-align: center;
   color: var(--ink-400);
 }
-html:not(.stage) .fgrow.selected .fg-num { color: var(--accent); }
-html:not(.stage) .fg-attr { font-family: var(--fg-serif); font-style: italic; color: var(--ink-500); }
-html:not(.stage) .fg-keytag {
+html .fgrow.selected .fg-num { color: var(--accent); }
+html .fg-attr { font-family: var(--fg-serif); font-style: italic; color: var(--ink-500); }
+html .fg-keytag {
   font-family: var(--fg-serif);
   width: 26px;
   height: 26px;
@@ -208,18 +204,15 @@ html:not(.stage) .fg-keytag {
   font-size: 13px;
   flex: 0 0 auto;
 }
-html:not(.stage) .fgrow.selected .fg-keytag { border-color: var(--accent); color: var(--accent); }
-html:not(.stage) .fgsearch { border-radius: 0; font-style: italic; }
+html .fgrow.selected .fg-keytag { border-color: var(--accent); color: var(--accent); }
+html .fgsearch { border-radius: 0; font-style: italic; }
 
 /* italic serif song title on the plate */
-html:not(.stage) .fg-songtitle { font-style: italic; }
+html .fg-songtitle { font-style: italic; }
 
-/* Stage mode: maximum contrast + larger text for a dim platform. */
+/* Stage mode: Field Guide skin + larger text for a dim platform. */
 html.stage {
   font-size: 112.5%;
-}
-html.stage body {
-  background: #000 !important;
 }
 
 /* Metronome light flash (replays each beat via React key change). */
