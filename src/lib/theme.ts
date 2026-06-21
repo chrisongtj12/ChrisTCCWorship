@@ -1,11 +1,12 @@
-export type Theme = "light" | "dark" | "stage";
+export type Theme = "light" | "dark";
 
 const KEY = "tcc.theme";
 
 export function getTheme(): Theme {
   try {
     const t = localStorage.getItem(KEY);
-    if (t === "light" || t === "dark" || t === "stage") return t;
+    if (t === "light" || t === "dark") return t;
+    if (t === "stage") return "dark"; // legacy: Stage was retired → fall back to Dark
   } catch {
     /* ignore */
   }
@@ -17,8 +18,8 @@ export function getTheme(): Theme {
 
 export function applyTheme(t: Theme): void {
   const el = document.documentElement;
-  el.classList.toggle("dark", t === "dark" || t === "stage");
-  el.classList.toggle("stage", t === "stage");
+  el.classList.toggle("dark", t === "dark");
+  el.classList.remove("stage"); // retired
 }
 
 export function setTheme(t: Theme): void {

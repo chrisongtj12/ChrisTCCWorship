@@ -18,8 +18,7 @@
           var t = localStorage.getItem("tcc.theme");
           if (!t) t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
           var el = document.documentElement;
-          if (t === "dark" || t === "stage") el.classList.add("dark");
-          if (t === "stage") el.classList.add("stage");
+          if (t === "dark" || t === "stage") el.classList.add("dark"); // legacy "stage" → dark
         } catch (e) {}
       })();
     </script>

@@ -38,7 +38,7 @@ export function LibraryView({ songs, onAddToSet, unlocked = false }: Props) {
           placeholder="Search songs…"
           className="fgsearch mb-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
         />
-        <nav className="fgnav flex gap-2 overflow-x-auto sm:flex-col sm:overflow-visible">
+        <nav className="fgnav flex max-h-[52vh] flex-col gap-2 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 sm:max-h-none sm:overflow-visible sm:rounded-none sm:border-0">
           {filtered.map((s) => {
             const num = String(songs.findIndex((x) => x.id === s.id) + 1).padStart(2, "0");
             const selected = s.id === selectedId;
@@ -46,7 +46,7 @@ export function LibraryView({ songs, onAddToSet, unlocked = false }: Props) {
               <div
                 key={s.id}
                 className={
-                  "fgrow shrink-0 rounded-lg sm:flex sm:items-center sm:justify-between " +
+                  "fgrow flex items-center justify-between rounded-lg " +
                   (selected ? "selected " : "") +
                   (selected
                     ? "bg-sky-600 text-white"
@@ -78,7 +78,7 @@ export function LibraryView({ songs, onAddToSet, unlocked = false }: Props) {
                     onClick={() => onAddToSet(s.id)}
                     title="Add to setlist"
                     className={
-                      "hidden h-6 w-6 rounded text-sm leading-none sm:flex sm:items-center sm:justify-center " +
+                      "flex h-7 w-7 items-center justify-center rounded text-base leading-none " +
                       (selected ? "bg-sky-500 text-white hover:bg-sky-400" : "bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600")
                     }
                   >

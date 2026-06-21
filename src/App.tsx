@@ -84,29 +84,44 @@ export function App() {
   return (
     <div className="min-h-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       <div className="mx-auto max-w-5xl px-4 py-4 sm:py-6">
-        <header className="mb-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <ButterflyMark className="fg-only" />
-            <div className="mr-1">
-              <h1 className="text-xl font-bold leading-none tracking-tight">
-                <span className="fg-only">TCC Worship</span>
-                <span className="dark-only">TCC Setlist</span>
-              </h1>
-              <div className="fg-strap fg-only mt-1">A field guide to the setlist</div>
+        <header className="mb-5">
+          {/* Brand + theme — always one tidy row */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <ButterflyMark className="fg-only shrink-0" />
+              <div className="min-w-0">
+                <h1 className="text-lg font-bold leading-none tracking-tight sm:text-xl">
+                  <span className="fg-only">TCC Worship</span>
+                  <span className="dark-only">TCC Setlist</span>
+                </h1>
+                <div className="fg-strap fg-only mt-1 leading-snug">A field guide to the setlist</div>
+              </div>
             </div>
-            <nav className="fgseg inline-flex rounded-lg border border-slate-200 p-0.5 dark:border-slate-700">
-              <TabBtn active={tab === "library"} onClick={() => setTab("library")}>
+            <div className="shrink-0">
+              <ThemeToggle />
+            </div>
+          </div>
+
+          {/* Tabs (full-width on phones) + Edit keys + count */}
+          <div className="mt-3 flex items-center gap-2 sm:mt-4">
+            <nav className="fgseg flex flex-1 gap-0.5 rounded-lg border border-slate-200 p-0.5 dark:border-slate-700 sm:flex-none">
+              <TabBtn
+                active={tab === "library"}
+                onClick={() => setTab("library")}
+                className="flex-1 sm:flex-none sm:px-6"
+              >
                 Library
               </TabBtn>
-              <TabBtn active={tab === "setlist"} onClick={() => setTab("setlist")}>
+              <TabBtn
+                active={tab === "setlist"}
+                onClick={() => setTab("setlist")}
+                className="flex-1 sm:flex-none sm:px-6"
+              >
                 Setlist{set.entries.length ? ` (${set.entries.length})` : ""}
               </TabBtn>
             </nav>
-          </div>
-          <div className="flex items-center gap-3">
             <EditLock unlocked={unlocked} onChange={setUnlocked} />
-            <ThemeToggle />
-            <span className="hidden text-xs text-slate-400 sm:inline">
+            <span className="ml-auto hidden text-xs text-slate-400 sm:inline">
               {songs.length} <span className="fg-only">specimens</span>
               <span className="dark-only">songs</span>
             </span>
@@ -184,13 +199,25 @@ function EditLock({ unlocked, onChange }: { unlocked: boolean; onChange: (v: boo
   );
 }
 
-function TabBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+function TabBtn({
+  active,
+  onClick,
+  children,
+  className = "",
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
     <button
       onClick={onClick}
       className={
-        "rounded-md px-3 py-1 text-sm transition " +
-        (active ? "bg-sky-600 text-white" : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800")
+        "rounded-md px-3 py-1.5 text-sm font-medium transition " +
+        (active ? "bg-sky-600 text-white" : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800") +
+        " " +
+        className
       }
     >
       {children}

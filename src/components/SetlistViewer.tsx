@@ -392,19 +392,27 @@ function Shell({
   return (
     <div className="min-h-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       <div className="mx-auto max-w-5xl px-4 py-4 sm:py-6">
-        <header className="mb-4 flex items-center justify-between gap-3">
-          <h1 className="text-lg font-bold tracking-tight">
-            {title}
-            {date && <span className="ml-2 text-sm font-normal text-slate-400">{date}</span>}
-          </h1>
-          <div className="no-print flex items-center gap-3">
-            <ThemeToggle />
-            <button onClick={onPrint} className="text-xs text-slate-400 underline hover:text-sky-600">
-              Print / PDF
-            </button>
-            <a href="#" className="text-xs text-slate-400 underline hover:text-sky-600">
+        <header className="mb-4">
+          <div className="flex items-start justify-between gap-3">
+            <h1 className="min-w-0 text-base font-bold leading-tight tracking-tight sm:text-lg">
+              {title}
+              {date && (
+                <span className="mt-0.5 block text-xs font-normal text-slate-400 sm:ml-2 sm:mt-0 sm:inline">
+                  {date}
+                </span>
+              )}
+            </h1>
+            <div className="no-print shrink-0">
+              <ThemeToggle />
+            </div>
+          </div>
+          <div className="no-print mt-2 flex items-center gap-4 text-xs">
+            <a href="#" className="whitespace-nowrap text-slate-400 underline hover:text-sky-600">
               Open editor
             </a>
+            <button onClick={onPrint} className="whitespace-nowrap text-slate-400 underline hover:text-sky-600">
+              Print / PDF
+            </button>
           </div>
         </header>
         {children}

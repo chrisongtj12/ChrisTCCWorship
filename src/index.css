@@ -210,11 +210,6 @@ html .fgsearch { border-radius: 0; font-style: italic; }
 /* italic serif song title on the plate */
 html .fg-songtitle { font-style: italic; }
 
-/* Stage mode: Field Guide skin + larger text for a dim platform. */
-html.stage {
-  font-size: 112.5%;
-}
-
 /* Metronome light flash (replays each beat via React key change). */
 @keyframes metroFlash {
   from {

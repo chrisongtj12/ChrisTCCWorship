@@ -16,7 +16,6 @@ export function ThemeToggle() {
       options={[
         { value: "light", label: "Light" },
         { value: "dark", label: "Dark" },
-        { value: "stage", label: "Stage" },
       ]}
     />
   );
