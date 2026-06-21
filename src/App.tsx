@@ -14,6 +14,7 @@ import { SetlistBuilder } from "./components/SetlistBuilder.tsx";
 import { UpcomingServices } from "./components/UpcomingServices.tsx";
 import { SetlistViewer } from "./components/SetlistViewer.tsx";
 import { ThemeToggle } from "./components/ThemeToggle.tsx";
+import { loadKeys, getPin, setPin } from "./lib/prefs.ts";
 
 type Tab = "library" | "setlist";
 
@@ -25,9 +26,13 @@ export function App() {
   const [shared, setShared] = useState<Setlist | null>(() => setlistFromHash());
 
   useEffect(() => {
-    fetch(`${import.meta.env.BASE_URL}songs.json`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then((d: SongsData) => setData(d))
+    Promise.all([
+      fetch(`${import.meta.env.BASE_URL}songs.json`).then((r) =>
+        r.ok ? (r.json() as Promise<SongsData>) : Promise.reject(new Error(`HTTP ${r.status}`))
+      ),
+      loadKeys(), // shared keys, applied before the UI renders
+    ])
+      .then(([d]) => setData(d))
       .catch((e) => setError(String(e)));
   }, []);
 
@@ -88,6 +93,7 @@ export function App() {
             </nav>
           </div>
           <div className="flex items-center gap-3">
+            <EditLock />
             <ThemeToggle />
             <span className="hidden text-xs text-slate-400 sm:inline">
               {songs.length} <span className="fg-only">specimens</span>
@@ -122,6 +128,38 @@ function ButterflyMark({ className = "" }: { className?: string }) {
       </g>
       <line x1="13" y1="5.5" x2="13" y2="20.5" stroke="#2c271d" strokeWidth="1.2" />
     </svg>
+  );
+}
+
+// Leader-PIN toggle: unlocks key editing so saves sync to everyone. Without the
+// PIN, key changes stay on this device only (the band is read-only).
+function EditLock() {
+  const [pin, setPinState] = useState(getPin());
+  const toggle = () => {
+    if (pin) {
+      setPin("");
+      setPinState("");
+    } else {
+      const p = window.prompt("Enter the leader PIN to edit keys for everyone:");
+      if (p) {
+        setPin(p.trim());
+        setPinState(p.trim());
+      }
+    }
+  };
+  return (
+    <button
+      onClick={toggle}
+      title={pin ? "Editing keys for everyone — click to lock" : "Unlock key editing (leader PIN)"}
+      className={
+        "rounded-md px-2.5 py-1 text-xs font-medium " +
+        (pin
+          ? "bg-emerald-600 text-white hover:bg-emerald-500"
+          : "border border-slate-300 text-slate-500 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800")
+      }
+    >
+      {pin ? "Editing ✓" : "Edit keys"}
+    </button>
   );
 }
 
