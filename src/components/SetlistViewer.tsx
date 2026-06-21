@@ -3,6 +3,7 @@ import type { Song } from "../lib/types.ts";
 import type { Setlist, SetEntry, View } from "../lib/setlist.ts";
 import { encodeSetlist } from "../lib/setlist.ts";
 import { fetchNotes, saveNote } from "../lib/notes.ts";
+import { fetchLive, publishLive, stopLive, type LiveState } from "../lib/live.ts";
 import { writeServiceKey } from "../lib/prefs.ts";
 import { transposeKey } from "../lib/chordpro.ts";
 import { availableSections } from "../lib/song.ts";
@@ -44,7 +45,24 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
   });
 
   const n = entries.length;
-  const go = (next: number) => setIdx(() => Math.min(n - 1, Math.max(0, next)));
+  const i = n ? Math.min(idx, n - 1) : 0;
+  const cur = entries[i];
+  const curSongId = cur?.e.songId ?? "";
+
+  // --- Live "follow-the-leader" band sync (preview feature) ----------------
+  const liveId = liveSet.shareId;
+  const [leading, setLeading] = useState(false); // I am broadcasting (leader)
+  const [live, setLive] = useState<LiveState | null>(null); // latest session state seen
+  const [following, setFollowing] = useState(true); // auto-follow when a session is live
+  const [followTranspose, setFollowTranspose] = useState<number | null>(null);
+  const [leadTranspose, setLeadTranspose] = useState(0); // current key reported by SongView
+  const applyingScroll = useRef(false);
+  const scrollPct = useRef(0);
+
+  const go = (next: number) => {
+    if (live && !leading && following) setFollowing(false); // manual nav → browse
+    setIdx(() => Math.min(n - 1, Math.max(0, next)));
+  };
 
   // On open, pull the shared notes for this set and overlay them (server wins).
   useEffect(() => {
@@ -135,6 +153,114 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
       }
     };
   }, []);
+
+  // Leader: broadcast current song/key/view (+ heartbeat to keep the session
+  // alive). Re-publishes whenever any of those change.
+  useEffect(() => {
+    if (!leading || !liveId) return;
+    const push = () =>
+      publishLive(liveId, {
+        v: 1,
+        idx: i,
+        songId: curSongId,
+        transpose: leadTranspose,
+        view: viewMode,
+        scrollPct: scrollPct.current,
+        leader: "Leader",
+        t: Date.now(),
+      });
+    push();
+    const hb = setInterval(push, 3000);
+    return () => clearInterval(hb);
+  }, [leading, liveId, i, curSongId, leadTranspose, viewMode]);
+
+  // Leader: publish scroll position (throttled) so followers track the page.
+  useEffect(() => {
+    if (!leading || !liveId) return;
+    let last = 0;
+    const onScroll = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      scrollPct.current = max > 0 ? window.scrollY / max : 0;
+      const now = Date.now();
+      if (now - last < 350) return;
+      last = now;
+      publishLive(liveId, {
+        v: 1,
+        idx: i,
+        songId: curSongId,
+        transpose: leadTranspose,
+        view: viewMode,
+        scrollPct: scrollPct.current,
+        leader: "Leader",
+        t: Date.now(),
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [leading, liveId, i, curSongId, leadTranspose, viewMode]);
+
+  // Follower: poll the live session (skipped while leading). A session is
+  // considered live only if its heartbeat is recent.
+  useEffect(() => {
+    if (!liveId || leading) {
+      setLive(null);
+      return;
+    }
+    let cancelled = false;
+    const poll = async () => {
+      const s = await fetchLive(liveId);
+      if (cancelled) return;
+      setLive(s && Date.now() - s.t < 20000 ? s : null);
+    };
+    poll();
+    const id = setInterval(poll, 1600);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [liveId, leading]);
+
+  // Follower: when following, mirror the leader's song/view/key/scroll.
+  useEffect(() => {
+    if (!live || leading || !following) return;
+    if (live.idx !== i) setIdx(live.idx);
+    if (live.view === "chart" || live.view === "lyrics") setViewMode(live.view);
+    if (live.transpose !== followTranspose) setFollowTranspose(live.transpose);
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    const target = Math.max(0, live.scrollPct) * max;
+    if (Math.abs(window.scrollY - target) > 24) {
+      applyingScroll.current = true;
+      window.scrollTo(0, target);
+      setTimeout(() => {
+        applyingScroll.current = false;
+      }, 80);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [live, leading, following]);
+
+  // Follower: a genuine scroll gesture (wheel/touch) pauses following so you
+  // can read ahead; "Re-sync" resumes. Programmatic scrolls don't fire these.
+  useEffect(() => {
+    if (!live || leading || !following) return;
+    const pause = () => setFollowing(false);
+    window.addEventListener("wheel", pause, { passive: true });
+    window.addEventListener("touchmove", pause, { passive: true });
+    return () => {
+      window.removeEventListener("wheel", pause);
+      window.removeEventListener("touchmove", pause);
+    };
+  }, [live, leading, following]);
+
+  const toggleLead = () => {
+    if (leading) {
+      setLeading(false);
+      if (liveId) stopLive(liveId);
+    } else {
+      setFollowing(false);
+      setLive(null);
+      setLeading(true);
+    }
+  };
 
   // Swipe left → next song, right → prev. Only a mostly-horizontal drag past a
   // threshold counts, so vertical reading-scroll and text selection are safe.
@@ -230,14 +356,30 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
     );
   }
 
-  const i = Math.min(idx, n - 1);
-  const { e: entry, origIdx } = entries[i];
+  const { e: entry, origIdx } = cur!;
   const song = byId.get(entry.songId)!;
   const order = orderLabels(entry, song);
+  const isFollowing = !!live && !leading && following;
 
   return (
     <Shell title={liveSet.name || "Setlist"} date={liveSet.date} onPrint={printSet}>
       <div className="no-print">
+        {/* Band-sync follower banner (appears when a leader is broadcasting) */}
+        {live && !leading && (
+          <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm dark:border-emerald-800 dark:bg-emerald-950">
+            <span className="flex items-center gap-2 font-medium text-emerald-700 dark:text-emerald-300">
+              <span className={"inline-block h-2 w-2 rounded-full bg-emerald-500 " + (following ? "metro-flash" : "")} />
+              {following ? "Following the leader — live" : "Following paused"}
+            </span>
+            <button
+              onClick={() => setFollowing((f) => !f)}
+              className="shrink-0 rounded-md bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500"
+            >
+              {following ? "Browse on my own" : "Re-sync"}
+            </button>
+          </div>
+        )}
+
         <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
           {entries.map(({ e }, j) => {
             const s = byId.get(e.songId)!;
@@ -278,7 +420,22 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
               +
             </button>
           </div>
+          {unlocked && liveId && (
+            <button
+              onClick={toggleLead}
+              title={leading ? "Stop broadcasting — band stops following" : "Broadcast your song/key/scroll so the band's phones follow you"}
+              className={
+                "rounded-lg px-3 py-1.5 font-medium " +
+                (leading
+                  ? "bg-rose-600 text-white hover:bg-rose-500"
+                  : "border border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800")
+              }
+            >
+              {leading ? "● Leading — stop" : "📡 Lead live"}
+            </button>
+          )}
           <span className="text-xs text-slate-400">swipe · ← / → · foot pedal — change songs</span>
+          {leading && <span className="text-xs text-rose-600 dark:text-rose-400">band phones are following you</span>}
           {notesSync && (
             <span className="text-xs text-emerald-600 dark:text-emerald-400">
               ✎ cue notes save &amp; sync for everyone on this link
@@ -305,15 +462,16 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
 
           <main className="min-w-0 flex-1 rounded-xl bg-white p-4 shadow-sm dark:bg-slate-900 sm:p-6">
             <SongView
-              key={i + ":" + entry.songId}
+              key={i + ":" + entry.songId + (isFollowing ? ":f" + followTranspose : "")}
               song={song}
-              initialTranspose={entry.transpose}
+              initialTranspose={isFollowing && followTranspose != null ? followTranspose : entry.transpose}
               initialCapo={entry.capo}
               initialNotation={entry.notation}
               initialView={viewMode}
               note={entry.note}
               onNoteChange={(v) => setNote(origIdx, v)}
               onViewChange={setViewMode}
+              onTransposeChange={setLeadTranspose}
               unlocked={unlocked}
               onSaveKey={(t) => saveEntryKey(origIdx, t)}
             />

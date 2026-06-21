@@ -18,6 +18,9 @@ type Props = {
   // Fired only on an explicit Chart/Lyrics toggle (not auto-correction), so a
   // parent can keep the chosen view "sticky" across songs.
   onViewChange?: (v: View) => void;
+  // Fired whenever the live transpose changes (mount + each +/–), so a parent
+  // can broadcast the leader's current key for band sync.
+  onTransposeChange?: (t: number) => void;
   // Library: persist the transposed key as this song's GENERAL default (per device).
   allowSaveKey?: boolean;
   // Called after a save: in a setlist it persists the key to that set's entry;
@@ -47,6 +50,7 @@ export function SongView({
   note,
   onNoteChange,
   onViewChange,
+  onTransposeChange,
   allowSaveKey = false,
   onSaveKey,
   unlocked = false,
@@ -142,6 +146,11 @@ export function SongView({
     if (view === "lyrics" && !hasLyrics) setView("chart");
     if (view === "combined" && !hasMerged) setView(hasChart ? "chart" : "lyrics");
   }, [view, hasChart, hasLyrics, hasMerged]);
+
+  // Report the current key up (mount + every change) for live band sync.
+  useEffect(() => {
+    onTransposeChange?.(transpose);
+  }, [transpose, onTransposeChange]);
 
   const soundingKey = song.key ? transposeKey(song.key, transpose) : null;
 
