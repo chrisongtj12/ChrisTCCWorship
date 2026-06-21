@@ -17,7 +17,15 @@ type Props = {
   // Fired only on an explicit Chart/Lyrics toggle (not auto-correction), so a
   // parent can keep the chosen view "sticky" across songs.
   onViewChange?: (v: View) => void;
+  // Library only: persist a transposed key as this song's default (per device).
+  allowSaveKey?: boolean;
 };
+
+const keyKey = (id: string) => `tcc.songkey.${id}`;
+function readSavedKey(id: string): number {
+  const v = parseInt(localStorage.getItem(keyKey(id)) || "", 10);
+  return Number.isNaN(v) ? 0 : v;
+}
 
 const SCALE_KEY = "tcc.fontscale";
 function clampScale(v: number): number {
@@ -39,6 +47,7 @@ export function SongView({
   note,
   onNoteChange,
   onViewChange,
+  allowSaveKey = false,
 }: Props) {
   const hasChart = !!song.choRaw;
   const hasLyrics = !!song.lyrics;
@@ -46,7 +55,21 @@ export function SongView({
 
   // "combined" = the AI-merged chart (chords over TCC wording); only offered when present.
   const [view, setView] = useState<View | "combined">(hasChart ? initialView : "lyrics");
-  const [transpose, setTranspose] = useState(initialTranspose);
+  // In the library, seed from any saved per-song key override; in a setlist use
+  // the entry's transpose. `savedKey` tracks what's persisted (for the Save button).
+  const [transpose, setTranspose] = useState(() =>
+    allowSaveKey ? readSavedKey(song.id) : initialTranspose
+  );
+  const [savedKey, setSavedKey] = useState(() => (allowSaveKey ? readSavedKey(song.id) : 0));
+
+  const saveKey = () => {
+    try {
+      localStorage.setItem(keyKey(song.id), String(transpose));
+    } catch {
+      /* ignore */
+    }
+    setSavedKey(transpose);
+  };
   const [capo, setCapo] = useState(initialCapo);
   const [notation, setNotation] = useState<Notation>(initialNotation);
   const [scale, setScale] = useState<number>(() => {
@@ -220,6 +243,15 @@ export function SongView({
                 { value: "roman", label: "Roman" },
               ]}
             />
+            {allowSaveKey && transpose !== savedKey && (
+              <button
+                onClick={saveKey}
+                className="rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-emerald-500"
+                title="Lock this in as the song's key"
+              >
+                Save key {soundingKey ? `(${soundingKey})` : ""}
+              </button>
+            )}
             {(transpose !== 0 || capo !== 0) && (
               <button
                 onClick={() => {

@@ -11,6 +11,7 @@ import {
 } from "./lib/setlist.ts";
 import { LibraryView } from "./components/LibraryView.tsx";
 import { SetlistBuilder } from "./components/SetlistBuilder.tsx";
+import { UpcomingServices } from "./components/UpcomingServices.tsx";
 import { SetlistViewer } from "./components/SetlistViewer.tsx";
 import { ThemeToggle } from "./components/ThemeToggle.tsx";
 
@@ -98,7 +99,10 @@ export function App() {
         {tab === "library" ? (
           <LibraryView songs={songs} onAddToSet={addToSet} />
         ) : (
-          <SetlistBuilder songs={songs} set={set} onChange={setSet} />
+          <>
+            <UpcomingServices songs={songs} onEdit={setSet} />
+            <SetlistBuilder songs={songs} set={set} onChange={setSet} />
+          </>
         )}
       </div>
     </div>

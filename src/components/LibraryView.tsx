@@ -83,7 +83,7 @@ export function LibraryView({ songs, onAddToSet }: Props) {
       <main className="rounded-xl bg-white p-4 shadow-sm dark:bg-slate-900 sm:p-6">
         {song ? (
           <>
-            <SongView key={song.id} song={song} />
+            <SongView key={song.id} song={song} allowSaveKey />
             <button
               onClick={() => onAddToSet(song.id)}
               className="mt-5 rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-500"
