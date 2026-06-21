@@ -39,14 +39,15 @@ export function LibraryView({ songs, onAddToSet, unlocked = false }: Props) {
           className="fgsearch mb-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
         />
         <nav className="fgnav flex max-h-[52vh] flex-col gap-2 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 sm:max-h-none sm:overflow-visible sm:rounded-none sm:border-0">
-          {filtered.map((s) => {
+          {filtered.map((s, i) => {
             const num = String(songs.findIndex((x) => x.id === s.id) + 1).padStart(2, "0");
             const selected = s.id === selectedId;
             return (
               <div
                 key={s.id}
+                style={{ animationDelay: `${Math.min(i, 12) * 35}ms` }}
                 className={
-                  "fgrow flex items-center justify-between rounded-lg " +
+                  "fg-rise fgrow flex items-center justify-between rounded-lg " +
                   (selected ? "selected " : "") +
                   (selected
                     ? "bg-sky-600 text-white"

@@ -84,18 +84,18 @@ export function App() {
   return (
     <div className="min-h-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       <div className="mx-auto max-w-5xl px-4 py-4 sm:py-6">
-        <header className="mb-5">
-          {/* Brand + theme — always one tidy row */}
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <ButterflyMark className="fg-only shrink-0" />
-              <div className="min-w-0">
-                <h1 className="text-lg font-bold leading-none tracking-tight sm:text-xl">
-                  <span className="fg-only">TCC Worship</span>
-                  <span className="dark-only">TCC Setlist</span>
-                </h1>
-                <div className="fg-strap fg-only mt-1 leading-snug">A field guide to the setlist</div>
-              </div>
+        <header className="fg-rule relative mb-5 overflow-hidden pb-4 pt-1">
+          {/* Faint pinned specimen drifting off the top-right margin (Fable plate). */}
+          <DecorButterfly className="fg-drift pointer-events-none absolute -right-16 -top-14 h-48 w-48 opacity-[0.14] dark:opacity-[0.1]" />
+
+          {/* Masthead: big serif wordmark + theme toggle */}
+          <div className="relative z-10 flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold leading-[1.05] tracking-tight sm:text-4xl">
+                <span className="fg-only">TCC Worship</span>
+                <span className="dark-only">TCC Setlist</span>
+              </h1>
+              <div className="fg-strap fg-only mt-2 leading-snug">A field guide to the setlist</div>
             </div>
             <div className="shrink-0">
               <ThemeToggle />
@@ -103,7 +103,7 @@ export function App() {
           </div>
 
           {/* Tabs (full-width on phones) + Edit keys + count */}
-          <div className="mt-3 flex items-center gap-2 sm:mt-4">
+          <div className="relative z-10 mt-3 flex items-center gap-2 sm:mt-4">
             <nav className="fgseg flex flex-1 gap-0.5 rounded-lg border border-slate-200 p-0.5 dark:border-slate-700 sm:flex-none">
               <TabBtn
                 active={tab === "library"}
@@ -128,6 +128,7 @@ export function App() {
           </div>
         </header>
 
+        <div key={tab} className="fg-fade">
         {tab === "library" ? (
           <LibraryView songs={songs} onAddToSet={addToSet} unlocked={unlocked} />
         ) : (
@@ -146,23 +147,43 @@ export function App() {
             />
           </>
         )}
+        </div>
       </div>
     </div>
   );
 }
 
-function ButterflyMark({ className = "" }: { className?: string }) {
+// Decorative antique-plate butterfly for the masthead margin (Field Guide /
+// Fable motif). Symmetric specimen in the theme palette; rendered faint.
+function DecorButterfly({ className = "" }: { className?: string }) {
   return (
-    <svg className={className} width="28" height="28" viewBox="0 0 26 26" aria-hidden="true">
+    <svg className={className} viewBox="0 0 120 120" aria-hidden="true">
+      <g stroke="#2c271d" strokeWidth="1.6" strokeLinecap="round" fill="none">
+        <path d="M60 34 C 54 24 50 20 46 15" />
+        <path d="M60 34 C 66 24 70 20 74 15" />
+      </g>
+      <circle cx="46" cy="14" r="2.2" fill="#2c271d" />
+      <circle cx="74" cy="14" r="2.2" fill="#2c271d" />
+      {/* forewings */}
       <g fill="#2f6f5e">
-        <ellipse cx="9" cy="9" rx="6" ry="7.2" transform="rotate(-18 9 9)" />
-        <ellipse cx="17" cy="9" rx="6" ry="7.2" transform="rotate(18 17 9)" />
+        <ellipse cx="40" cy="48" rx="24" ry="16" transform="rotate(-28 40 48)" />
+        <ellipse cx="80" cy="48" rx="24" ry="16" transform="rotate(28 80 48)" />
       </g>
+      {/* hindwings */}
       <g fill="#a4382b">
-        <ellipse cx="9.6" cy="17" rx="4.6" ry="5.2" transform="rotate(20 9.6 17)" />
-        <ellipse cx="16.4" cy="17" rx="4.6" ry="5.2" transform="rotate(-20 16.4 17)" />
+        <ellipse cx="46" cy="80" rx="17" ry="15" transform="rotate(22 46 80)" />
+        <ellipse cx="74" cy="80" rx="17" ry="15" transform="rotate(-22 74 80)" />
       </g>
-      <line x1="13" y1="5.5" x2="13" y2="20.5" stroke="#2c271d" strokeWidth="1.2" />
+      <g fill="#9a6a1f">
+        <circle cx="33" cy="44" r="3.4" />
+        <circle cx="87" cy="44" r="3.4" />
+      </g>
+      <g fill="#f3ead4">
+        <circle cx="44" cy="82" r="3" />
+        <circle cx="76" cy="82" r="3" />
+      </g>
+      <ellipse cx="60" cy="60" rx="3.2" ry="27" fill="#2c271d" />
+      <circle cx="60" cy="33" r="4.2" fill="#2c271d" />
     </svg>
   );
 }

@@ -83,10 +83,19 @@ html {
   --fg-serif: "EB Garamond", Georgia, "Times New Roman", serif;
 }
 
-html:not(.dark) body,
-html.dark body {
-  background: var(--paper);
+/* Aged-paper tooth: a faint grayscale grain over the cream/sepia field so it
+   reads as a printed plate (the Fable card) rather than a flat screen fill. */
+html:not(.dark) body {
+  background-color: var(--paper);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
 }
+html.dark body {
+  background-color: var(--paper);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+}
+
+/* Hairline catalogue rule (header underline, section dividers). */
+html .fg-rule { border-bottom: 1px solid var(--line-2); }
 
 /* Old-style serif for focal headings (masthead + song titles). */
 html h1,
@@ -159,6 +168,15 @@ html .fg-strap {
   color: var(--accent);
 }
 
+/* Muted serif catalogue label (e.g. "4 services" beside a section heading). */
+html .fg-count {
+  font-family: var(--fg-serif);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 12px;
+  color: var(--ink-500);
+}
+
 /* letterpress segmented pills (theme toggle, tabs, chart/lyrics, notation) */
 html .fgseg { border-radius: 0 !important; }
 html .fgseg > button {
@@ -223,6 +241,30 @@ html .fg-songtitle { font-style: italic; }
 }
 .metro-flash {
   animation: metroFlash 0.16s ease-out;
+}
+
+/* ---- Motion: gentle entrances + a drifting specimen -------------------- */
+@keyframes fgRise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes fgFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes fgDrift {
+  0%, 100% { transform: rotate(-18deg) translateY(0); }
+  50% { transform: rotate(-14.5deg) translateY(-7px); }
+}
+/* fades up from below; stagger via inline animation-delay */
+.fg-rise { opacity: 0; animation: fgRise 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+/* soft crossfade for swapped views (keyed on the active tab) */
+.fg-fade { animation: fgFade 0.4s ease-out both; }
+/* the pinned masthead specimen breathes slowly */
+.fg-drift { animation: fgDrift 9s ease-in-out infinite; transform-origin: 60% 40%; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fg-rise, .fg-fade, .fg-drift { animation: none !important; opacity: 1 !important; }
 }
 
 /* Print / Save-as-PDF: ink-friendly, ignores dark/stage theme. */

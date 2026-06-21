@@ -20,12 +20,18 @@ export function UpcomingServices({ services, songs, onEdit }: Props) {
 
   return (
     <div className="mb-5">
-      <h2 className="mb-3 text-lg font-bold tracking-tight">Upcoming Services</h2>
+      <div className="fg-rule mb-4 flex items-baseline justify-between pb-2">
+        <h2 className="text-xl font-bold tracking-tight">Upcoming Services</h2>
+        <span className="fg-count">
+          {services.length} {services.length === 1 ? "service" : "services"}
+        </span>
+      </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {services.map((svc) => (
+        {services.map((svc, i) => (
           <div
             key={svc.date}
-            className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900"
+            style={{ animationDelay: `${i * 80}ms` }}
+            className="fg-rise rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 dark:border-slate-700 dark:bg-slate-900"
           >
             <div className="mb-3 flex items-start justify-between gap-3">
               <div>
@@ -35,7 +41,7 @@ export function UpcomingServices({ services, songs, onEdit }: Props) {
               </div>
               <button
                 onClick={() => play(svc)}
-                className="rounded-md bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-500"
+                className="rounded-md bg-sky-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-sky-500 active:scale-95"
               >
                 ▶ Play
               </button>
