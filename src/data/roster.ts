@@ -2,11 +2,19 @@
 // copy is stored in the shared KV store (/api/roster) so the band sees the
 // leader's services (song order + keys) with no share link. Editing is done in
 // the Setlist builder and saved back to the server (PIN-gated).
-import type { Setlist } from "../lib/setlist.ts";
+import type { Setlist, Notation, View } from "../lib/setlist.ts";
 import { newEntry } from "../lib/setlist.ts";
 import { readSongKey, readServiceKey, getPin } from "../lib/prefs.ts";
 
-export type RosterEntry = { role: string; songId: string; transpose?: number };
+export type RosterEntry = {
+  role: string;
+  songId: string;
+  transpose?: number;
+  capo?: number;
+  notation?: Notation;
+  view?: View;
+  flow?: string[] | null; // per-song section-order reminder
+};
 export type Service = {
   date: string; // ISO, e.g. "2026-06-21"
   display: string; // "Sunday 21 June"
@@ -86,6 +94,10 @@ export function serviceToSetlist(s: Service): Setlist {
       transpose:
         readServiceKey(shareId, e.songId) ??
         (typeof e.transpose === "number" ? e.transpose : readSongKey(e.songId)),
+      capo: e.capo ?? 0,
+      notation: e.notation ?? "names",
+      view: e.view ?? "chart",
+      flow: e.flow ?? null,
     })),
   };
 }
@@ -100,6 +112,10 @@ export function setlistToService(set: Setlist, base: Service): Service {
       role: e.note || "",
       songId: e.songId,
       transpose: e.transpose,
+      capo: e.capo,
+      notation: e.notation,
+      view: e.view,
+      flow: e.flow,
     })),
   };
 }
