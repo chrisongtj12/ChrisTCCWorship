@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Song } from "../lib/types.ts";
 import type { Notation, View } from "../lib/setlist.ts";
 import { transposeKey } from "../lib/chordpro.ts";
+import { readSongKey, writeSongKey } from "../lib/prefs.ts";
 import { ChartView } from "./ChartView.tsx";
 import { LyricsView } from "./LyricsView.tsx";
 import { Segmented, Btn, CapoSelect } from "./ui.tsx";
@@ -17,17 +18,12 @@ type Props = {
   // Fired only on an explicit Chart/Lyrics toggle (not auto-correction), so a
   // parent can keep the chosen view "sticky" across songs.
   onViewChange?: (v: View) => void;
-  // Library only: persist a transposed key as this song's GENERAL default (per device).
+  // Library: persist the transposed key as this song's GENERAL default (per device).
   allowSaveKey?: boolean;
-  // Setlist context: persist the current transpose to THIS set's entry (per-set key).
+  // Called after a save: in a setlist it persists the key to that set's entry;
+  // in the library it lets the parent refresh (e.g. the key-tag badge).
   onSaveKey?: (transpose: number) => void;
 };
-
-const keyKey = (id: string) => `tcc.songkey.${id}`;
-function readSavedKey(id: string): number {
-  const v = parseInt(localStorage.getItem(keyKey(id)) || "", 10);
-  return Number.isNaN(v) ? 0 : v;
-}
 
 const SCALE_KEY = "tcc.fontscale";
 function clampScale(v: number): number {
@@ -61,23 +57,16 @@ export function SongView({
   // In the library, seed from any saved per-song key override; in a setlist use
   // the entry's transpose. `savedKey` tracks what's persisted (for the Save button).
   const [transpose, setTranspose] = useState(() =>
-    allowSaveKey ? readSavedKey(song.id) : initialTranspose
+    allowSaveKey ? readSongKey(song.id) : initialTranspose
   );
   const [savedKey, setSavedKey] = useState(() =>
-    allowSaveKey ? readSavedKey(song.id) : initialTranspose
+    allowSaveKey ? readSongKey(song.id) : initialTranspose
   );
   const canSaveKey = allowSaveKey || !!onSaveKey;
 
   const saveKey = () => {
-    if (allowSaveKey) {
-      try {
-        localStorage.setItem(keyKey(song.id), String(transpose));
-      } catch {
-        /* ignore */
-      }
-    } else {
-      onSaveKey?.(transpose); // persist to the setlist entry
-    }
+    if (allowSaveKey) writeSongKey(song.id, transpose); // global default
+    onSaveKey?.(transpose); // setlist: persist to the entry; library: refresh tag
     setSavedKey(transpose);
   };
   const [capo, setCapo] = useState(initialCapo);

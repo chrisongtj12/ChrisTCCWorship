@@ -3,6 +3,7 @@ import type { Song } from "../lib/types.ts";
 import type { Setlist, SetEntry, View } from "../lib/setlist.ts";
 import { encodeSetlist } from "../lib/setlist.ts";
 import { fetchNotes, saveNote } from "../lib/notes.ts";
+import { writeServiceKey } from "../lib/prefs.ts";
 import { transposeKey } from "../lib/chordpro.ts";
 import { availableSections } from "../lib/song.ts";
 import { SongView } from "./SongView.tsx";
@@ -189,7 +190,9 @@ export function SetlistViewer({ set, songs }: Props) {
     }
   };
 
-  // Save a per-set key for the entry at original index (persists into the URL hash).
+  // Save a per-set key for the entry at original index: into the URL hash AND
+  // (keyed by the set's shareId) into device memory, so re-opening the same
+  // service from Upcoming Services restores it.
   const saveEntryKey = (origIdx: number, transpose: number) => {
     const next: Setlist = {
       ...liveSet,
@@ -201,6 +204,8 @@ export function SetlistViewer({ set, songs }: Props) {
     } catch {
       /* ignore */
     }
+    const songId = liveSet.entries[origIdx]?.songId;
+    if (liveSet.shareId && songId) writeServiceKey(liveSet.shareId, songId, transpose);
   };
 
   const printSet = () => {

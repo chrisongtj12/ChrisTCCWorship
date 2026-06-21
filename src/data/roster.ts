@@ -3,6 +3,7 @@
 // Response (Kids' song deliberately placed before the pre-sermon song).
 import type { Setlist } from "../lib/setlist.ts";
 import { newEntry } from "../lib/setlist.ts";
+import { readSongKey, readServiceKey } from "../lib/prefs.ts";
 
 export type RosterEntry = { role: string; songId: string };
 export type Service = {
@@ -71,10 +72,16 @@ export const ROSTER: Service[] = [
 // Build a shareable/playable Setlist from a service. shareId is deterministic
 // (per date) so shared cue notes stay consistent across devices.
 export function serviceToSetlist(s: Service): Setlist {
+  const shareId = "svc" + s.date.replace(/-/g, "");
   return {
     name: s.display + (s.theme ? ` — ${s.theme}` : ""),
     date: s.date,
-    shareId: "svc" + s.date.replace(/-/g, ""),
-    entries: s.entries.map((e) => ({ ...newEntry(e.songId), note: e.role })),
+    shareId,
+    entries: s.entries.map((e) => ({
+      ...newEntry(e.songId),
+      note: e.role,
+      // Per-set saved key → global default → original (0).
+      transpose: readServiceKey(shareId, e.songId) ?? readSongKey(e.songId),
+    })),
   };
 }

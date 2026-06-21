@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Song } from "../lib/types.ts";
+import { transposeKey } from "../lib/chordpro.ts";
+import { readSongKey } from "../lib/prefs.ts";
 import { SongView } from "./SongView.tsx";
 
 type Props = {
@@ -7,9 +9,17 @@ type Props = {
   onAddToSet: (songId: string) => void;
 };
 
+// Effective key = original key shifted by the saved global default (per device).
+function effectiveKey(s: Song): string {
+  if (!s.key) return "–";
+  return transposeKey(s.key, readSongKey(s.id));
+}
+
 export function LibraryView({ songs, onAddToSet }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(songs[0]?.id ?? null);
   const [query, setQuery] = useState("");
+  // Bumped when a song's key is saved, so the key tags re-read the new defaults.
+  const [, bumpKeys] = useState(0);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -55,14 +65,14 @@ export function LibraryView({ songs, onAddToSet }: Props) {
                     <div className="fg-title font-medium">{s.title}</div>
                     <div className="fg-attr fg-only truncate text-xs">{s.artist ?? "—"}</div>
                     <div className={"dark-only text-xs " + (selected ? "text-sky-100" : "text-slate-400")}>
-                      {s.key ?? "—"}
+                      {effectiveKey(s)}
                       {s.choRaw ? "" : " · lyrics only"}
                       {s.lyrics ? "" : " · chart only"}
                     </div>
                   </span>
                 </button>
                 <div className="flex shrink-0 items-center gap-2 pr-2">
-                  <span className="fg-keytag fg-only">{s.key ?? "–"}</span>
+                  <span className="fg-keytag fg-only">{effectiveKey(s)}</span>
                   <button
                     onClick={() => onAddToSet(s.id)}
                     title="Add to setlist"
@@ -83,7 +93,7 @@ export function LibraryView({ songs, onAddToSet }: Props) {
       <main className="rounded-xl bg-white p-4 shadow-sm dark:bg-slate-900 sm:p-6">
         {song ? (
           <>
-            <SongView key={song.id} song={song} allowSaveKey />
+            <SongView key={song.id} song={song} allowSaveKey onSaveKey={() => bumpKeys((v) => v + 1)} />
             <button
               onClick={() => onAddToSet(song.id)}
               className="mt-5 rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-500"
