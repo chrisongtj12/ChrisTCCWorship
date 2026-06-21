@@ -84,18 +84,18 @@ export function App() {
   return (
     <div className="min-h-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       <div className="mx-auto max-w-5xl px-4 py-4 sm:py-6">
-        <header className="fg-rule relative mb-5 overflow-hidden pb-4 pt-1">
-          {/* Faint pinned specimen drifting off the top-right margin (Fable plate). */}
-          <DecorButterfly className="fg-drift pointer-events-none absolute -right-16 -top-14 h-48 w-48 opacity-[0.14] dark:opacity-[0.1]" />
-
-          {/* Masthead: big serif wordmark + theme toggle */}
+        <header className="fg-rule relative mb-5 pb-4 pt-1">
+          {/* Masthead: lithographic specimen emblem + big serif wordmark + theme toggle */}
           <div className="relative z-10 flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h1 className="text-2xl font-bold leading-[1.05] tracking-tight sm:text-4xl">
-                <span className="fg-only">TCC Worship</span>
-                <span className="dark-only">TCC Setlist</span>
-              </h1>
-              <div className="fg-strap fg-only mt-2 leading-snug">A field guide to the setlist</div>
+            <div className="flex min-w-0 items-center gap-3">
+              <LithoButterfly className="fg-flutter h-12 w-12 shrink-0 sm:h-14 sm:w-14" />
+              <div className="min-w-0">
+                <h1 className="text-2xl font-bold leading-[1.05] tracking-tight sm:text-4xl">
+                  <span className="fg-only">TCC Worship</span>
+                  <span className="dark-only">TCC Setlist</span>
+                </h1>
+                <div className="fg-strap fg-only mt-2 leading-snug">A field guide to the setlist</div>
+              </div>
             </div>
             <div className="shrink-0">
               <ThemeToggle />
@@ -155,35 +155,78 @@ export function App() {
 
 // Decorative antique-plate butterfly for the masthead margin (Field Guide /
 // Fable motif). Symmetric specimen in the theme palette; rendered faint.
-function DecorButterfly({ className = "" }: { className?: string }) {
+// Lithographic-plate butterfly emblem for the masthead — a detailed, hand-drawn
+// specimen (one half defined, mirrored) in the Field Guide palette with venation,
+// patterned spots and an eyespot, echoing the Claude Fable plate.
+function LithoButterfly({ className = "" }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 120 120" aria-hidden="true">
-      <g stroke="#2c271d" strokeWidth="1.6" strokeLinecap="round" fill="none">
-        <path d="M60 34 C 54 24 50 20 46 15" />
-        <path d="M60 34 C 66 24 70 20 74 15" />
+    <svg className={className} viewBox="0 0 100 100" aria-hidden="true">
+      <defs>
+        <linearGradient id="bfFore" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#3c8471" />
+          <stop offset="1" stopColor="#235848" />
+        </linearGradient>
+        <linearGradient id="bfHind" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#b94634" />
+          <stop offset="1" stopColor="#8d2f22" />
+        </linearGradient>
+        <g id="bfHalf">
+          {/* forewing */}
+          <path
+            d="M50 41 C 51 24 63 12 79 14 C 91 16 94 31 86 40 C 74 46 60 46 50 45 Z"
+            fill="url(#bfFore)"
+            stroke="#1f3f34"
+            strokeWidth="0.9"
+            strokeLinejoin="round"
+          />
+          {/* hindwing */}
+          <path
+            d="M50 52 C 51 66 60 88 75 84 C 88 80 89 65 79 58 C 69 53 58 52 50 52 Z"
+            fill="url(#bfHind)"
+            stroke="#5b231a"
+            strokeWidth="0.9"
+            strokeLinejoin="round"
+          />
+          {/* forewing apex patch */}
+          <path d="M71 17 C 80 14 88 18 87 27 C 81 24 75 23 70 25 Z" fill="#1f3f34" opacity="0.6" />
+          {/* forewing venation */}
+          <g stroke="#1f3f34" strokeWidth="0.55" fill="none" opacity="0.5">
+            <path d="M51 43 C 62 33 72 24 81 17" />
+            <path d="M51 44 C 64 39 75 34 86 31" />
+            <path d="M51 45 C 61 42 70 41 80 40" />
+          </g>
+          {/* forewing spots */}
+          <circle cx="66" cy="30" r="2.6" fill="#ecd9ac" />
+          <circle cx="75" cy="29" r="1.9" fill="#d7a23a" />
+          {/* hindwing eyespot */}
+          <circle cx="71" cy="71" r="4.8" fill="#f0e3c4" stroke="#5b231a" strokeWidth="0.6" />
+          <circle cx="71" cy="71" r="2.2" fill="#3a1712" />
+          {/* hindwing venation + marginal dots */}
+          <g stroke="#5b231a" strokeWidth="0.55" fill="none" opacity="0.45">
+            <path d="M51 54 C 60 63 67 73 74 82" />
+            <path d="M51 55 C 58 60 63 68 67 78" />
+          </g>
+          <g fill="#d7a23a">
+            <circle cx="60" cy="82" r="1.3" />
+            <circle cx="68" cy="84" r="1.3" />
+          </g>
+          {/* antenna */}
+          <path d="M50 32 C 55 21 60 16 67 12" stroke="#241f17" strokeWidth="1.1" fill="none" strokeLinecap="round" />
+          <circle cx="67.3" cy="11.6" r="1.7" fill="#241f17" />
+        </g>
+      </defs>
+
+      <use href="#bfHalf" />
+      <use href="#bfHalf" transform="matrix(-1 0 0 1 100 0)" />
+
+      {/* body */}
+      <ellipse cx="50" cy="50" rx="2.7" ry="20" fill="#2a241b" />
+      <g stroke="#120e08" strokeWidth="0.5" opacity="0.5">
+        <line x1="47.5" y1="45" x2="52.5" y2="45" />
+        <line x1="47.7" y1="51" x2="52.3" y2="51" />
+        <line x1="48.1" y1="57" x2="51.9" y2="57" />
       </g>
-      <circle cx="46" cy="14" r="2.2" fill="#2c271d" />
-      <circle cx="74" cy="14" r="2.2" fill="#2c271d" />
-      {/* forewings */}
-      <g fill="#2f6f5e">
-        <ellipse cx="40" cy="48" rx="24" ry="16" transform="rotate(-28 40 48)" />
-        <ellipse cx="80" cy="48" rx="24" ry="16" transform="rotate(28 80 48)" />
-      </g>
-      {/* hindwings */}
-      <g fill="#a4382b">
-        <ellipse cx="46" cy="80" rx="17" ry="15" transform="rotate(22 46 80)" />
-        <ellipse cx="74" cy="80" rx="17" ry="15" transform="rotate(-22 74 80)" />
-      </g>
-      <g fill="#9a6a1f">
-        <circle cx="33" cy="44" r="3.4" />
-        <circle cx="87" cy="44" r="3.4" />
-      </g>
-      <g fill="#f3ead4">
-        <circle cx="44" cy="82" r="3" />
-        <circle cx="76" cy="82" r="3" />
-      </g>
-      <ellipse cx="60" cy="60" rx="3.2" ry="27" fill="#2c271d" />
-      <circle cx="60" cy="33" r="4.2" fill="#2c271d" />
+      <circle cx="50" cy="31" r="3.3" fill="#2a241b" />
     </svg>
   );
 }

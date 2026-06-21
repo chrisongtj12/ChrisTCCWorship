@@ -94,8 +94,22 @@ html.dark body {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
 }
 
-/* Hairline catalogue rule (header underline, section dividers). */
-html .fg-rule { border-bottom: 1px solid var(--line-2); }
+/* Hairline catalogue rule that draws itself in from the left (header underline,
+   section dividers). */
+html .fg-rule { position: relative; }
+html .fg-rule::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--line-2);
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: fgDraw 0.7s ease-out 0.15s forwards;
+}
+@keyframes fgDraw { to { transform: scaleX(1); } }
 
 /* Old-style serif for focal headings (masthead + song titles). */
 html h1,
@@ -263,8 +277,16 @@ html .fg-songtitle { font-style: italic; }
 /* the pinned masthead specimen breathes slowly */
 .fg-drift { animation: fgDrift 9s ease-in-out infinite; transform-origin: 60% 40%; }
 
+/* masthead butterfly gently flutters its wings (horizontal foreshorten + bob) */
+@keyframes fgFlutter {
+  0%, 100% { transform: scaleX(1) translateY(0) rotate(0deg); }
+  50% { transform: scaleX(0.86) translateY(-1.5px) rotate(-1.5deg); }
+}
+.fg-flutter { animation: fgFlutter 2.8s ease-in-out infinite; transform-origin: center 45%; }
+
 @media (prefers-reduced-motion: reduce) {
-  .fg-rise, .fg-fade, .fg-drift { animation: none !important; opacity: 1 !important; }
+  .fg-rise, .fg-fade, .fg-drift, .fg-flutter { animation: none !important; opacity: 1 !important; }
+  html .fg-rule::after { transform: scaleX(1); animation: none; }
 }
 
 /* Print / Save-as-PDF: ink-friendly, ignores dark/stage theme. */
