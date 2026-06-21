@@ -189,6 +189,20 @@ export function SetlistViewer({ set, songs }: Props) {
     }
   };
 
+  // Save a per-set key for the entry at original index (persists into the URL hash).
+  const saveEntryKey = (origIdx: number, transpose: number) => {
+    const next: Setlist = {
+      ...liveSet,
+      entries: liveSet.entries.map((e, j) => (j === origIdx ? { ...e, transpose } : e)),
+    };
+    setLiveSet(next);
+    try {
+      history.replaceState(null, "", "#s=" + encodeSetlist(next));
+    } catch {
+      /* ignore */
+    }
+  };
+
   const printSet = () => {
     const el = document.documentElement;
     const had = { dark: el.classList.contains("dark"), stage: el.classList.contains("stage") };
@@ -294,6 +308,7 @@ export function SetlistViewer({ set, songs }: Props) {
               note={entry.note}
               onNoteChange={(v) => setNote(origIdx, v)}
               onViewChange={setViewMode}
+              onSaveKey={(t) => saveEntryKey(origIdx, t)}
             />
           </main>
         </div>

@@ -17,8 +17,10 @@ type Props = {
   // Fired only on an explicit Chart/Lyrics toggle (not auto-correction), so a
   // parent can keep the chosen view "sticky" across songs.
   onViewChange?: (v: View) => void;
-  // Library only: persist a transposed key as this song's default (per device).
+  // Library only: persist a transposed key as this song's GENERAL default (per device).
   allowSaveKey?: boolean;
+  // Setlist context: persist the current transpose to THIS set's entry (per-set key).
+  onSaveKey?: (transpose: number) => void;
 };
 
 const keyKey = (id: string) => `tcc.songkey.${id}`;
@@ -48,6 +50,7 @@ export function SongView({
   onNoteChange,
   onViewChange,
   allowSaveKey = false,
+  onSaveKey,
 }: Props) {
   const hasChart = !!song.choRaw;
   const hasLyrics = !!song.lyrics;
@@ -60,13 +63,20 @@ export function SongView({
   const [transpose, setTranspose] = useState(() =>
     allowSaveKey ? readSavedKey(song.id) : initialTranspose
   );
-  const [savedKey, setSavedKey] = useState(() => (allowSaveKey ? readSavedKey(song.id) : 0));
+  const [savedKey, setSavedKey] = useState(() =>
+    allowSaveKey ? readSavedKey(song.id) : initialTranspose
+  );
+  const canSaveKey = allowSaveKey || !!onSaveKey;
 
   const saveKey = () => {
-    try {
-      localStorage.setItem(keyKey(song.id), String(transpose));
-    } catch {
-      /* ignore */
+    if (allowSaveKey) {
+      try {
+        localStorage.setItem(keyKey(song.id), String(transpose));
+      } catch {
+        /* ignore */
+      }
+    } else {
+      onSaveKey?.(transpose); // persist to the setlist entry
     }
     setSavedKey(transpose);
   };
@@ -243,13 +253,13 @@ export function SongView({
                 { value: "roman", label: "Roman" },
               ]}
             />
-            {allowSaveKey && transpose !== savedKey && (
+            {canSaveKey && transpose !== savedKey && (
               <button
                 onClick={saveKey}
                 className="rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-emerald-500"
-                title="Lock this in as the song's key"
+                title={allowSaveKey ? "Lock this in as the song's general key" : "Save this key to the set"}
               >
-                Save key {soundingKey ? `(${soundingKey})` : ""}
+                {allowSaveKey ? "Save key" : "Save to set"} {soundingKey ? `(${soundingKey})` : ""}
               </button>
             )}
             {(transpose !== 0 || capo !== 0) && (
