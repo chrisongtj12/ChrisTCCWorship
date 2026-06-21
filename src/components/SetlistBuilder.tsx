@@ -29,6 +29,7 @@ export function SetlistBuilder({ songs, set, onChange, service, canEditService =
   const byId = useMemo(() => new Map(songs.map((s) => [s.id, s])), [songs]);
   const [expanded, setExpanded] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
+  const [savedSvc, setSavedSvc] = useState(false);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [overIdx, setOverIdx] = useState<number | null>(null);
   const [saved, setSaved] = useState<SavedSetlist[]>(() => loadSavedSets());
@@ -113,19 +114,12 @@ export function SetlistBuilder({ songs, set, onChange, service, canEditService =
 
   return (
     <div className="mx-auto max-w-3xl">
-      {/* Editing an Upcoming Service — save the order + keys back to the shared roster */}
+      {/* Editing an Upcoming Service — "Save set" saves the order + keys back to it */}
       {service && (
-        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-sm dark:border-emerald-700/60 dark:bg-emerald-900/20">
+        <div className="mb-4 rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-sm dark:border-emerald-700/60 dark:bg-emerald-900/20">
           <span className="font-medium">Editing service: {service.display}</span>
-          {canEditService ? (
-            <button
-              onClick={() => onSaveService?.()}
-              className="rounded-md bg-emerald-600 px-3 py-1.5 font-medium text-white hover:bg-emerald-500"
-            >
-              Save to service (everyone)
-            </button>
-          ) : (
-            <span className="text-slate-500">Unlock “Edit keys” to save changes for everyone.</span>
+          {!canEditService && (
+            <span className="text-slate-500"> — unlock “Edit keys” (top-right) to save for everyone.</span>
           )}
         </div>
       )}
@@ -133,12 +127,22 @@ export function SetlistBuilder({ songs, set, onChange, service, canEditService =
       <div className="mb-4 rounded-lg border border-slate-200 p-3 dark:border-slate-700">
         <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={() => setSaved(saveNamedSet(set))}
-            disabled={set.entries.length === 0}
+            onClick={() => {
+              if (service) {
+                onSaveService?.();
+                setSavedSvc(true);
+                setTimeout(() => setSavedSvc(false), 2000);
+              } else {
+                setSaved(saveNamedSet(set));
+              }
+            }}
+            disabled={service ? !canEditService : set.entries.length === 0}
+            title={service ? "Save the order + keys back to this service (everyone)" : "Save to this device"}
             className="rounded-md bg-slate-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-600 disabled:opacity-40"
           >
-            Save set
+            {service ? "Save to service" : "Save set"}
           </button>
+          {savedSvc && <span className="text-xs font-medium text-emerald-600">Saved for everyone ✓</span>}
           <button
             onClick={() => onChange({ name: "", date: "", entries: [] })}
             className="rounded-md border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
