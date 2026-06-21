@@ -29,7 +29,7 @@ type Tab = "library" | "setlist";
 export function App() {
   const [data, setData] = useState<SongsData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>("library");
+  const [tab, setTab] = useState<Tab>("setlist");
   const [set, setSet] = useState<Setlist>(() => loadDraft() ?? emptySetlist());
   const [shared, setShared] = useState<Setlist | null>(() => setlistFromHash());
   const [unlocked, setUnlocked] = useState<boolean>(() => isUnlocked());
