@@ -19,9 +19,13 @@ type Props = {
   songs: Song[];
   set: Setlist;
   onChange: (set: Setlist) => void;
+  // When the current set is an Upcoming-Service, this is its service + a save-back.
+  service?: { display: string } | null;
+  canEditService?: boolean;
+  onSaveService?: () => void;
 };
 
-export function SetlistBuilder({ songs, set, onChange }: Props) {
+export function SetlistBuilder({ songs, set, onChange, service, canEditService = false, onSaveService }: Props) {
   const byId = useMemo(() => new Map(songs.map((s) => [s.id, s])), [songs]);
   const [expanded, setExpanded] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
@@ -109,6 +113,22 @@ export function SetlistBuilder({ songs, set, onChange }: Props) {
 
   return (
     <div className="mx-auto max-w-3xl">
+      {/* Editing an Upcoming Service — save the order + keys back to the shared roster */}
+      {service && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-sm dark:border-emerald-700/60 dark:bg-emerald-900/20">
+          <span className="font-medium">Editing service: {service.display}</span>
+          {canEditService ? (
+            <button
+              onClick={() => onSaveService?.()}
+              className="rounded-md bg-emerald-600 px-3 py-1.5 font-medium text-white hover:bg-emerald-500"
+            >
+              Save to service (everyone)
+            </button>
+          ) : (
+            <span className="text-slate-500">Unlock “Edit keys” to save changes for everyone.</span>
+          )}
+        </div>
+      )}
       {/* Saved sets */}
       <div className="mb-4 rounded-lg border border-slate-200 p-3 dark:border-slate-700">
         <div className="flex flex-wrap items-center gap-2">

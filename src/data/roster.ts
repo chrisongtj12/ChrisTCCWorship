@@ -1,18 +1,21 @@
-// Preloaded 9am service roster (committed). Each service maps a role to a song
-// in the library. Song order is Opening → Song 2 → Kids' → Pre-Sermon →
-// Response (Kids' song deliberately placed before the pre-sermon song).
+// Upcoming-services roster. The committed ROSTER below is the seed; the live
+// copy is stored in the shared KV store (/api/roster) so the band sees the
+// leader's services (song order + keys) with no share link. Editing is done in
+// the Setlist builder and saved back to the server (PIN-gated).
 import type { Setlist } from "../lib/setlist.ts";
 import { newEntry } from "../lib/setlist.ts";
-import { readSongKey, readServiceKey } from "../lib/prefs.ts";
+import { readSongKey, readServiceKey, getPin } from "../lib/prefs.ts";
 
-export type RosterEntry = { role: string; songId: string };
+export type RosterEntry = { role: string; songId: string; transpose?: number };
 export type Service = {
   date: string; // ISO, e.g. "2026-06-21"
   display: string; // "Sunday 21 June"
-  theme: string | null; // e.g. "New Song – How Great"
-  leader: string; // "Chris" / "Combined"
+  theme: string | null;
+  leader: string;
   entries: RosterEntry[]; // in service order
 };
+
+export const serviceShareId = (date: string) => "svc" + date.replace(/-/g, "");
 
 export const ROSTER: Service[] = [
   {
@@ -69,10 +72,10 @@ export const ROSTER: Service[] = [
   },
 ];
 
-// Build a shareable/playable Setlist from a service. shareId is deterministic
-// (per date) so shared cue notes stay consistent across devices.
+// Build a shareable/playable Setlist from a service. Per-song key precedence:
+// play-view tweak (per-service key store) → the service's saved key → global default.
 export function serviceToSetlist(s: Service): Setlist {
-  const shareId = "svc" + s.date.replace(/-/g, "");
+  const shareId = serviceShareId(s.date);
   return {
     name: s.display + (s.theme ? ` — ${s.theme}` : ""),
     date: s.date,
@@ -80,8 +83,69 @@ export function serviceToSetlist(s: Service): Setlist {
     entries: s.entries.map((e) => ({
       ...newEntry(e.songId),
       note: e.role,
-      // Per-set saved key → global default → original (0).
-      transpose: readServiceKey(shareId, e.songId) ?? readSongKey(e.songId),
+      transpose:
+        readServiceKey(shareId, e.songId) ??
+        (typeof e.transpose === "number" ? e.transpose : readSongKey(e.songId)),
     })),
   };
+}
+
+// Convert an edited setlist (from the builder) back to a service, keeping the
+// service's display/theme/leader. Order + per-song keys come from the setlist.
+export function setlistToService(set: Setlist, base: Service): Service {
+  return {
+    ...base,
+    date: set.date || base.date,
+    entries: set.entries.map((e) => ({
+      role: e.note || "",
+      songId: e.songId,
+      transpose: e.transpose,
+    })),
+  };
+}
+
+export function serviceForShareId(roster: Service[], shareId: string | undefined): Service | null {
+  if (!shareId) return null;
+  return roster.find((s) => serviceShareId(s.date) === shareId) ?? null;
+}
+
+// ---- Shared roster store (server, with committed seed) ---------------------
+
+let cache: Service[] = ROSTER;
+
+export function getRoster(): Service[] {
+  return cache;
+}
+
+export async function loadRoster(): Promise<Service[]> {
+  try {
+    const r = await fetch("/api/roster");
+    if (r.ok) {
+      const j = await r.json();
+      if (Array.isArray(j.services) && j.services.length) {
+        cache = j.services;
+        return cache;
+      }
+    }
+  } catch {
+    /* offline → use seed */
+  }
+  cache = ROSTER;
+  return cache;
+}
+
+// Upsert a service (by date) locally and on the server (PIN-gated). Returns the
+// new roster list; sync is best-effort.
+export function saveService(updated: Service): Service[] {
+  cache = cache.some((s) => s.date === updated.date)
+    ? cache.map((s) => (s.date === updated.date ? updated : s))
+    : [...cache, updated].sort((a, b) => a.date.localeCompare(b.date));
+  fetch("/api/roster", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ service: updated, pin: getPin() }),
+  }).catch(() => {
+    /* offline; local cache already updated */
+  });
+  return cache;
 }

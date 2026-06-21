@@ -15,6 +15,14 @@ import { UpcomingServices } from "./components/UpcomingServices.tsx";
 import { SetlistViewer } from "./components/SetlistViewer.tsx";
 import { ThemeToggle } from "./components/ThemeToggle.tsx";
 import { loadKeys, setPin, isUnlocked } from "./lib/prefs.ts";
+import {
+  type Service,
+  getRoster,
+  loadRoster,
+  saveService,
+  setlistToService,
+  serviceForShareId,
+} from "./data/roster.ts";
 
 type Tab = "library" | "setlist";
 
@@ -25,6 +33,7 @@ export function App() {
   const [set, setSet] = useState<Setlist>(() => loadDraft() ?? emptySetlist());
   const [shared, setShared] = useState<Setlist | null>(() => setlistFromHash());
   const [unlocked, setUnlocked] = useState<boolean>(() => isUnlocked());
+  const [roster, setRoster] = useState<Service[]>(() => getRoster());
 
   useEffect(() => {
     Promise.all([
@@ -32,6 +41,7 @@ export function App() {
         r.ok ? (r.json() as Promise<SongsData>) : Promise.reject(new Error(`HTTP ${r.status}`))
       ),
       loadKeys(), // shared keys, applied before the UI renders
+      loadRoster().then(setRoster), // shared services
     ])
       .then(([d]) => setData(d))
       .catch((e) => setError(String(e)));
@@ -107,8 +117,18 @@ export function App() {
           <LibraryView songs={songs} onAddToSet={addToSet} unlocked={unlocked} />
         ) : (
           <>
-            <UpcomingServices songs={songs} onEdit={setSet} />
-            <SetlistBuilder songs={songs} set={set} onChange={setSet} />
+            <UpcomingServices services={roster} songs={songs} onEdit={setSet} />
+            <SetlistBuilder
+              songs={songs}
+              set={set}
+              onChange={setSet}
+              service={serviceForShareId(roster, set.shareId)}
+              canEditService={unlocked}
+              onSaveService={() => {
+                const base = serviceForShareId(roster, set.shareId);
+                if (base) setRoster(saveService(setlistToService(set, base)));
+              }}
+            />
           </>
         )}
       </div>

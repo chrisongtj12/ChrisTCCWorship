@@ -2,15 +2,17 @@ import { useMemo } from "react";
 import type { Song } from "../lib/types.ts";
 import type { Setlist } from "../lib/setlist.ts";
 import { encodeSetlist } from "../lib/setlist.ts";
-import { ROSTER, serviceToSetlist, type Service } from "../data/roster.ts";
+import { transposeKey } from "../lib/chordpro.ts";
+import { serviceToSetlist, type Service } from "../data/roster.ts";
 
 type Props = {
+  services: Service[];
   songs: Song[];
   onEdit: (set: Setlist) => void;
 };
 
-export function UpcomingServices({ songs, onEdit }: Props) {
-  const titleById = useMemo(() => new Map(songs.map((s) => [s.id, s.title])), [songs]);
+export function UpcomingServices({ services, songs, onEdit }: Props) {
+  const byId = useMemo(() => new Map(songs.map((s) => [s.id, s])), [songs]);
 
   const play = (svc: Service) => {
     window.location.hash = "s=" + encodeSetlist(serviceToSetlist(svc));
@@ -20,7 +22,7 @@ export function UpcomingServices({ songs, onEdit }: Props) {
     <div className="mb-5">
       <h2 className="mb-3 text-lg font-bold tracking-tight">Upcoming Services</h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {ROSTER.map((svc) => (
+        {services.map((svc) => (
           <div
             key={svc.date}
             className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900"
@@ -40,14 +42,19 @@ export function UpcomingServices({ songs, onEdit }: Props) {
             </div>
 
             <ol className="divide-y divide-slate-100 dark:divide-slate-800">
-              {svc.entries.map((e, i) => (
-                <li key={i} className="flex items-baseline gap-3 py-1.5">
-                  <span className="w-24 shrink-0 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                    {e.role}
-                  </span>
-                  <span className="text-sm">{titleById.get(e.songId) ?? e.songId}</span>
-                </li>
-              ))}
+              {serviceToSetlist(svc).entries.map((e, i) => {
+                const song = byId.get(e.songId);
+                const key = song?.key ? transposeKey(song.key, e.transpose) : null;
+                return (
+                  <li key={i} className="flex items-baseline gap-3 py-1.5">
+                    <span className="w-24 shrink-0 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                      {e.note}
+                    </span>
+                    <span className="min-w-0 flex-1 text-sm">{song?.title ?? e.songId}</span>
+                    {key && <span className="shrink-0 text-xs font-medium text-sky-600">{key}</span>}
+                  </li>
+                );
+              })}
             </ol>
 
             <button
