@@ -118,20 +118,31 @@ export function getRoster(): Service[] {
 }
 
 export async function loadRoster(): Promise<Service[]> {
+  let serverServices: Service[] = [];
   try {
     const r = await fetch("/api/roster");
     if (r.ok) {
       const j = await r.json();
-      if (Array.isArray(j.services) && j.services.length) {
-        cache = j.services;
-        return cache;
-      }
+      if (Array.isArray(j.services)) serverServices = j.services;
     }
   } catch {
-    /* offline → use seed */
+    /* offline → seed only */
   }
-  cache = ROSTER;
+  // The committed seed is the baseline; server-saved services override by date
+  // (and any extra server services are appended). Merging — not replacing —
+  // keeps unsaved seed services from disappearing once one service is saved.
+  cache = mergeRoster(ROSTER, serverServices);
   return cache;
+}
+
+function mergeRoster(seed: Service[], server: Service[]): Service[] {
+  const merged = seed.slice();
+  for (const svc of server) {
+    const i = merged.findIndex((s) => s.date === svc.date);
+    if (i >= 0) merged[i] = svc;
+    else merged.push(svc);
+  }
+  return merged.sort((a, b) => a.date.localeCompare(b.date));
 }
 
 // Upsert a service (by date) locally and on the server (PIN-gated). Returns the
