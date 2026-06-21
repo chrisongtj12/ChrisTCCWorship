@@ -23,6 +23,8 @@ type Props = {
   // Called after a save: in a setlist it persists the key to that set's entry;
   // in the library it lets the parent refresh (e.g. the key-tag badge).
   onSaveKey?: (transpose: number) => void;
+  // Editing keys is gated by the leader PIN — Save buttons show only when unlocked.
+  unlocked?: boolean;
 };
 
 const SCALE_KEY = "tcc.fontscale";
@@ -47,6 +49,7 @@ export function SongView({
   onViewChange,
   allowSaveKey = false,
   onSaveKey,
+  unlocked = false,
 }: Props) {
   const hasChart = !!song.choRaw;
   const hasLyrics = !!song.lyrics;
@@ -242,7 +245,7 @@ export function SongView({
                 { value: "roman", label: "Roman" },
               ]}
             />
-            {canSaveKey && transpose !== savedKey && (
+            {canSaveKey && unlocked && transpose !== savedKey && (
               <button
                 onClick={saveKey}
                 className="rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-emerald-500"

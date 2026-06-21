@@ -14,7 +14,7 @@ import { SetlistBuilder } from "./components/SetlistBuilder.tsx";
 import { UpcomingServices } from "./components/UpcomingServices.tsx";
 import { SetlistViewer } from "./components/SetlistViewer.tsx";
 import { ThemeToggle } from "./components/ThemeToggle.tsx";
-import { loadKeys, getPin, setPin } from "./lib/prefs.ts";
+import { loadKeys, setPin, isUnlocked } from "./lib/prefs.ts";
 
 type Tab = "library" | "setlist";
 
@@ -24,6 +24,7 @@ export function App() {
   const [tab, setTab] = useState<Tab>("library");
   const [set, setSet] = useState<Setlist>(() => loadDraft() ?? emptySetlist());
   const [shared, setShared] = useState<Setlist | null>(() => setlistFromHash());
+  const [unlocked, setUnlocked] = useState<boolean>(() => isUnlocked());
 
   useEffect(() => {
     Promise.all([
@@ -68,7 +69,7 @@ export function App() {
     );
   if (!data) return <Centered>Loading…</Centered>;
 
-  if (shared) return <SetlistViewer set={shared} songs={songs} />;
+  if (shared) return <SetlistViewer set={shared} songs={songs} unlocked={unlocked} />;
 
   return (
     <div className="min-h-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
@@ -93,7 +94,7 @@ export function App() {
             </nav>
           </div>
           <div className="flex items-center gap-3">
-            <EditLock />
+            <EditLock unlocked={unlocked} onChange={setUnlocked} />
             <ThemeToggle />
             <span className="hidden text-xs text-slate-400 sm:inline">
               {songs.length} <span className="fg-only">specimens</span>
@@ -103,7 +104,7 @@ export function App() {
         </header>
 
         {tab === "library" ? (
-          <LibraryView songs={songs} onAddToSet={addToSet} />
+          <LibraryView songs={songs} onAddToSet={addToSet} unlocked={unlocked} />
         ) : (
           <>
             <UpcomingServices songs={songs} onEdit={setSet} />
@@ -131,34 +132,34 @@ function ButterflyMark({ className = "" }: { className?: string }) {
   );
 }
 
-// Leader-PIN toggle: unlocks key editing so saves sync to everyone. Without the
-// PIN, key changes stay on this device only (the band is read-only).
-function EditLock() {
-  const [pin, setPinState] = useState(getPin());
+// Leader-PIN toggle: unlocks key editing so the Save buttons appear and sync to
+// everyone. Locked = read-only (no Save buttons; the band can transpose to view
+// but not change shared keys).
+function EditLock({ unlocked, onChange }: { unlocked: boolean; onChange: (v: boolean) => void }) {
   const toggle = () => {
-    if (pin) {
+    if (unlocked) {
       setPin("");
-      setPinState("");
+      onChange(false);
     } else {
       const p = window.prompt("Enter the leader PIN to edit keys for everyone:");
-      if (p) {
+      if (p && p.trim()) {
         setPin(p.trim());
-        setPinState(p.trim());
+        onChange(true);
       }
     }
   };
   return (
     <button
       onClick={toggle}
-      title={pin ? "Editing keys for everyone — click to lock" : "Unlock key editing (leader PIN)"}
+      title={unlocked ? "Editing keys for everyone — click to lock" : "Unlock key editing (leader PIN)"}
       className={
         "rounded-md px-2.5 py-1 text-xs font-medium " +
-        (pin
+        (unlocked
           ? "bg-emerald-600 text-white hover:bg-emerald-500"
           : "border border-slate-300 text-slate-500 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800")
       }
     >
-      {pin ? "Editing ✓" : "Edit keys"}
+      {unlocked ? "Editing ✓" : "Edit keys"}
     </button>
   );
 }

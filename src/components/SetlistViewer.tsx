@@ -14,13 +14,14 @@ import { ThemeToggle } from "./ThemeToggle.tsx";
 type Props = {
   set: Setlist;
   songs: Song[];
+  unlocked?: boolean;
 };
 
 function orderLabels(entry: SetEntry, song: Song): string[] {
   return entry.flow && entry.flow.length ? entry.flow : availableSections(song);
 }
 
-export function SetlistViewer({ set, songs }: Props) {
+export function SetlistViewer({ set, songs, unlocked = false }: Props) {
   const byId = new Map(songs.map((s) => [s.id, s]));
   // Editable working copy so cue notes can be tweaked live (persisted to the URL).
   const [liveSet, setLiveSet] = useState<Setlist>(set);
@@ -313,6 +314,7 @@ export function SetlistViewer({ set, songs }: Props) {
               note={entry.note}
               onNoteChange={(v) => setNote(origIdx, v)}
               onViewChange={setViewMode}
+              unlocked={unlocked}
               onSaveKey={(t) => saveEntryKey(origIdx, t)}
             />
           </main>

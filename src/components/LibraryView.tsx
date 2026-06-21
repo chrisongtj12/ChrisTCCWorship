@@ -7,6 +7,7 @@ import { SongView } from "./SongView.tsx";
 type Props = {
   songs: Song[];
   onAddToSet: (songId: string) => void;
+  unlocked?: boolean;
 };
 
 // Effective key = original key shifted by the saved global default (per device).
@@ -15,7 +16,7 @@ function effectiveKey(s: Song): string {
   return transposeKey(s.key, readSongKey(s.id));
 }
 
-export function LibraryView({ songs, onAddToSet }: Props) {
+export function LibraryView({ songs, onAddToSet, unlocked = false }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(songs[0]?.id ?? null);
   const [query, setQuery] = useState("");
   // Bumped when a song's key is saved, so the key tags re-read the new defaults.
@@ -93,7 +94,13 @@ export function LibraryView({ songs, onAddToSet }: Props) {
       <main className="rounded-xl bg-white p-4 shadow-sm dark:bg-slate-900 sm:p-6">
         {song ? (
           <>
-            <SongView key={song.id} song={song} allowSaveKey onSaveKey={() => bumpKeys((v) => v + 1)} />
+            <SongView
+              key={song.id}
+              song={song}
+              allowSaveKey
+              unlocked={unlocked}
+              onSaveKey={() => bumpKeys((v) => v + 1)}
+            />
             <button
               onClick={() => onAddToSet(song.id)}
               className="mt-5 rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-500"
