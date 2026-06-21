@@ -12,6 +12,7 @@ export type SetEntry = {
   view: View;
   flow: string[] | null; // running-order reminder; null = natural
   note: string; // free-text cue, e.g. "start a cappella"
+  role: string; // service slot label, e.g. "Opening Song" (services only; "" for ad-hoc sets)
 };
 
 export type Setlist = {
@@ -36,7 +37,7 @@ export function ensureShareId(set: Setlist): Setlist {
 }
 
 export function newEntry(songId: string): SetEntry {
-  return { songId, transpose: 0, capo: 0, notation: "names", view: "chart", flow: null, note: "" };
+  return { songId, transpose: 0, capo: 0, notation: "names", view: "chart", flow: null, note: "", role: "" };
 }
 
 export function emptySetlist(): Setlist {
@@ -44,9 +45,9 @@ export function emptySetlist(): Setlist {
 }
 
 // --- compact wire format ---------------------------------------------------
-// [songId, transpose, capo, notation(0|1), view(0|1), flow(string[]|0), note]
+// [songId, transpose, capo, notation(0|1), view(0|1), flow(string[]|0), note, role]
 
-type WireEntry = [string, number, number, 0 | 1, 0 | 1, string[] | 0, string?];
+type WireEntry = [string, number, number, 0 | 1, 0 | 1, string[] | 0, string?, string?];
 type Wire = { n: string; d: string; e: WireEntry[]; i?: string };
 
 function toWire(set: Setlist): Wire {
@@ -62,6 +63,7 @@ function toWire(set: Setlist): Wire {
       x.view === "lyrics" ? 1 : 0,
       x.flow ?? 0,
       x.note || "",
+      x.role || "",
     ]),
   };
 }
@@ -79,6 +81,7 @@ function fromWire(w: Wire): Setlist {
       view: e[4] === 1 ? "lyrics" : "chart",
       flow: Array.isArray(e[5]) ? e[5] : null,
       note: typeof e[6] === "string" ? e[6] : "",
+      role: typeof e[7] === "string" ? e[7] : "",
     })),
   };
 }

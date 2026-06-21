@@ -227,6 +227,17 @@ export function SetlistBuilder({ songs, set, onChange, service, canEditService =
       ) : (
         <>
           <p className="mb-2 text-xs text-slate-400">Drag the &#10303; handle to reorder songs.</p>
+          <datalist id="tcc-slot-roles">
+            <option value="Opening Song" />
+            <option value="Song 2" />
+            <option value="Song 3" />
+            <option value="Kids' Song" />
+            <option value="Pre-Sermon" />
+            <option value="Response" />
+            <option value="Communion" />
+            <option value="Offering" />
+            <option value="Closing" />
+          </datalist>
           <ol className="space-y-3">
             {set.entries.map((entry, i) => {
               const song = byId.get(entry.songId);
@@ -263,6 +274,17 @@ export function SetlistBuilder({ songs, set, onChange, service, canEditService =
                           remove
                         </button>
                       </div>
+
+                      {service && (
+                        <input
+                          list="tcc-slot-roles"
+                          value={entry.role || ""}
+                          onChange={(e) => updateEntry(i, { role: e.target.value })}
+                          placeholder="Slot — e.g. Opening Song"
+                          title="Service slot label (separate from cue notes below)"
+                          className="mt-1.5 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-xs font-semibold uppercase tracking-wider text-slate-600 placeholder:font-normal placeholder:normal-case placeholder:tracking-normal placeholder:text-slate-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
+                        />
+                      )}
 
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         <div className="flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700">

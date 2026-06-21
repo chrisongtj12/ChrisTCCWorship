@@ -48,9 +48,14 @@ export function UpcomingServices({ services, songs, onEdit }: Props) {
                 return (
                   <li key={i} className="flex items-baseline gap-3 py-1.5">
                     <span className="w-24 shrink-0 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                      {e.note}
+                      {e.role}
                     </span>
-                    <span className="min-w-0 flex-1 text-sm">{song?.title ?? e.songId}</span>
+                    <span className="min-w-0 flex-1 text-sm">
+                      {song?.title ?? e.songId}
+                      {e.note && (
+                        <span className="mt-0.5 block text-xs italic text-slate-400">{e.note}</span>
+                      )}
+                    </span>
                     {key && <span className="shrink-0 text-xs font-medium text-sky-600">{key}</span>}
                   </li>
                 );

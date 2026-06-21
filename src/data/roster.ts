@@ -7,7 +7,8 @@ import { newEntry } from "../lib/setlist.ts";
 import { readSongKey, readServiceKey, getPin } from "../lib/prefs.ts";
 
 export type RosterEntry = {
-  role: string;
+  role: string; // slot label, e.g. "Opening Song" — shown on the service card
+  cue?: string; // free-text performance cue, separate from the slot label
   songId: string;
   transpose?: number;
   capo?: number;
@@ -90,7 +91,8 @@ export function serviceToSetlist(s: Service): Setlist {
     shareId,
     entries: s.entries.map((e) => ({
       ...newEntry(e.songId),
-      note: e.role,
+      role: e.role, // slot label (card label)
+      note: e.cue ?? "", // performance cue (kept separate from the label)
       transpose:
         readServiceKey(shareId, e.songId) ??
         (typeof e.transpose === "number" ? e.transpose : readSongKey(e.songId)),
@@ -109,7 +111,8 @@ export function setlistToService(set: Setlist, base: Service): Service {
     ...base,
     date: set.date || base.date,
     entries: set.entries.map((e) => ({
-      role: e.note || "",
+      role: e.role || "",
+      cue: e.note || "",
       songId: e.songId,
       transpose: e.transpose,
       capo: e.capo,
