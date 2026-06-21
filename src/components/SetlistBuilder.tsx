@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { Song } from "../lib/types.ts";
 import type { Setlist, SetEntry, Notation, View, SavedSetlist } from "../lib/setlist.ts";
 import {
@@ -48,30 +48,44 @@ export function SetlistBuilder({ songs, set, onChange, service, canEditService =
   };
 
   // Pointer-based drag — works with mouse AND touch (HTML5 DnD doesn't on touch).
+  // Drag/over indices live in refs so the move/up handlers always read the
+  // current values (state closures go stale mid-drag). The target row is the one
+  // whose box contains the pointer's Y, which is robust to layout/capture quirks.
+  const dragRef = useRef<number | null>(null);
+  const overRef = useRef<number | null>(null);
   const onHandleDown = (e: React.PointerEvent, i: number) => {
+    dragRef.current = i;
+    overRef.current = i;
     setDragIdx(i);
     setOverIdx(i);
     try {
-      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     } catch {
       /* ignore */
     }
   };
   const onHandleMove = (e: React.PointerEvent) => {
-    if (dragIdx === null) return;
-    const el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
-    const li = el?.closest("[data-idx]") as HTMLElement | null;
-    if (li) {
-      const idx = Number(li.dataset.idx);
-      if (!Number.isNaN(idx) && idx !== overIdx) setOverIdx(idx);
+    if (dragRef.current === null) return;
+    let target = dragRef.current;
+    document.querySelectorAll<HTMLElement>("[data-idx]").forEach((el) => {
+      const r = el.getBoundingClientRect();
+      if (e.clientY >= r.top && e.clientY <= r.bottom) target = Number(el.dataset.idx);
+    });
+    if (target !== overRef.current) {
+      overRef.current = target;
+      setOverIdx(target);
     }
   };
   const onHandleUp = (e: React.PointerEvent) => {
-    if (dragIdx !== null && overIdx !== null) reorder(dragIdx, overIdx);
+    const from = dragRef.current;
+    const to = overRef.current;
+    if (from !== null && to !== null) reorder(from, to);
+    dragRef.current = null;
+    overRef.current = null;
     setDragIdx(null);
     setOverIdx(null);
     try {
-      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
     } catch {
       /* ignore */
     }
