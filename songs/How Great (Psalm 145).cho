@@ -7,7 +7,7 @@
 {footer: For use solely with the SongSelect® Terms of Use. All rights reserved. www.ccli.com}
 {ccli: 7190356}
 {ccli_license: 301143}
-{comment: Intro KEYS RIFF, TRANSITION V CHORD}
+{comment: Intro}
 [||:] [G]            [|] [G]            [|] [G]            [|] [G]            [:||]
 
 {comment: Verse 1}
@@ -26,20 +26,25 @@
 [G]    How [C]great is the [G/D]Lord, and [D]greatly to be [Em]praised
 How [C]great is the [G]Lord our [D]God!, [G/B]    How [C]great is the [G/D]Lord
 (1.)  And [D]greatly to be [G]praised  (to Turnaround 1)
-(2.)  And [D]greatly to be [Em]praised  (to Turnaround 2)
 
 {comment: Turnaround 1}
 [|] [G]            [|] [G]            [|]
-
-{comment: Turnaround 2}
-[|] [Em]          [|] [Em]          [|] [C]            [|] [C]            [|]
-[|] [G/B]         [|] [G/B]        [|] [C]            [|] [C]            [|]
 
 {comment: Verse 3}
 [G]  Your gracious hand provides for [C/G]all who live and [G]breathe
 [C]  Your mercy runs to find the helpless and the weak
 [D]  When we call [Em]out to You,    [Gmaj7/B]  You hear our [C]cries
 [D]  And all our [G]needs Your gracious [C]hand [D]pro - [C/E]vides    [D/F#]
+
+{comment: Chorus 1a}
+[G]    How [C]great is the [G/D]Lord, and [D]greatly to be [Em]praised
+How [C]great is the [G]Lord our [D]God!, [G/B]    How [C]great is the [G/D]Lord
+(2.)  And [D]greatly to be [Em]praised  (to Turnaround 2)
+
+{comment: Turnaround 2}
+[|] [Em]          [|] [Em]          [|] [C]            [|] [C]            [|]
+[|] [G/B]         [|] [G/B]        [|] [C]            [|] [C]            [|]
+
 
 {comment: Verse 4}
 [G]  Forever without end, creation will rejoice
