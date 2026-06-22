@@ -392,10 +392,19 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
                 Controlling
               </span>
             ) : live ? (
-              <span className="flex items-center gap-1 rounded bg-emerald-600 px-2 py-1 text-[11px] font-semibold text-white">
+              // The status chip IS the follow toggle: Controlled (synced) ⇄ Paused.
+              // Tapping Paused resumes following; tapping Controlled takes control.
+              <button
+                onClick={() => setFollowing((f) => !f)}
+                title={following ? "Synced to the leader — tap to take control" : "Paused — tap to resume following the leader"}
+                className={
+                  "flex items-center gap-1 rounded px-2 py-1 text-[11px] font-semibold text-white " +
+                  (following ? "bg-emerald-600 hover:bg-emerald-500" : "bg-amber-600 hover:bg-amber-500")
+                }
+              >
                 <span className={"inline-block h-1.5 w-1.5 rounded-full bg-white " + (following ? "metro-flash" : "")} />
-                {following ? "Controlled" : "Paused"}
-              </span>
+                {following ? "Controlled" : "⏸ Paused"}
+              </button>
             ) : null}
 
             <Segmented
@@ -429,15 +438,6 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
                 className="text-xs text-slate-400 underline hover:text-slate-600"
               >
                 reset
-              </button>
-            )}
-
-            {live && !leading && (
-              <button
-                onClick={() => setFollowing((f) => !f)}
-                className="rounded bg-emerald-600 px-2 py-1 text-[11px] font-medium text-white hover:bg-emerald-500"
-              >
-                {following ? "Browse" : "Re-sync"}
               </button>
             )}
           </div>
