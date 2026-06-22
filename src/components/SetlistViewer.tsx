@@ -4,7 +4,7 @@ import type { Setlist, SetEntry, View } from "../lib/setlist.ts";
 import { encodeSetlist } from "../lib/setlist.ts";
 import { fetchNotes, saveNote } from "../lib/notes.ts";
 import { fetchLive, publishLive, stopLive, type LiveState } from "../lib/live.ts";
-import { writeServiceKey } from "../lib/prefs.ts";
+import { writeServiceKey, getPin, setPin } from "../lib/prefs.ts";
 import { transposeKey } from "../lib/chordpro.ts";
 import { availableSections } from "../lib/song.ts";
 import { SongView } from "./SongView.tsx";
@@ -251,15 +251,38 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
     };
   }, [live, leading, following]);
 
-  const toggleLead = () => {
+  const toggleLead = async () => {
+    if (!liveId) return;
     if (leading) {
       setLeading(false);
-      if (liveId) stopLive(liveId);
-    } else {
-      setFollowing(false);
-      setLive(null);
-      setLeading(true);
+      stopLive(liveId);
+      return;
     }
+    // Allow leading straight from the Play view: prompt for the PIN if this
+    // device hasn't unlocked yet, then verify it with one real publish.
+    if (!getPin()) {
+      const entered = (window.prompt("Enter the leader PIN to lead the band:") || "").trim();
+      if (!entered) return;
+      setPin(entered);
+    }
+    const ok = await publishLive(liveId, {
+      v: 1,
+      idx: i,
+      songId: curSongId,
+      transpose: leadTranspose,
+      view: viewMode,
+      scrollPct: scrollPct.current,
+      leader: "Leader",
+      t: Date.now(),
+    });
+    if (!ok) {
+      setPin("");
+      window.alert("Couldn't start leading — the PIN was rejected, or live sync isn't enabled on this deployment.");
+      return;
+    }
+    setFollowing(false);
+    setLive(null);
+    setLeading(true);
   };
 
   // Swipe left → next song, right → prev. Only a mostly-horizontal drag past a
@@ -420,10 +443,10 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
               +
             </button>
           </div>
-          {unlocked && liveId && (
+          {liveId && (
             <button
               onClick={toggleLead}
-              title={leading ? "Stop broadcasting — band stops following" : "Broadcast your song/key/scroll so the band's phones follow you"}
+              title={leading ? "Stop broadcasting — band stops following" : "Broadcast your song/key/scroll so the band's phones follow you (leader PIN)"}
               className={
                 "rounded-lg px-3 py-1.5 font-medium " +
                 (leading

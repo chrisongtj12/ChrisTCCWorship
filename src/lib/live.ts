@@ -26,6 +26,9 @@ export async function fetchLive(id: string): Promise<LiveState | null> {
   }
 }
 
+// Returns true only on a real publish. A wrong PIN (403) or a deploy without KV
+// (200 + { ok:false, disabled:true }) both count as failure so the caller can
+// tell the leader it didn't take.
 export async function publishLive(id: string, state: LiveState): Promise<boolean> {
   try {
     const r = await fetch("/api/live", {
@@ -33,7 +36,9 @@ export async function publishLive(id: string, state: LiveState): Promise<boolean
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, state, pin: getPin() }),
     });
-    return r.ok;
+    if (!r.ok) return false;
+    const j = await r.json().catch(() => ({}));
+    return j.ok !== false;
   } catch {
     return false;
   }
