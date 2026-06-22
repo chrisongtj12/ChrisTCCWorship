@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Song } from "../lib/types.ts";
-import type { Setlist, SetEntry, View } from "../lib/setlist.ts";
+import type { Setlist, SetEntry, View, Notation } from "../lib/setlist.ts";
 import { encodeSetlist } from "../lib/setlist.ts";
 import { fetchNotes, saveNote } from "../lib/notes.ts";
 import { fetchLive, publishLive, stopLive, type LiveState } from "../lib/live.ts";
@@ -11,6 +11,7 @@ import { SongView } from "./SongView.tsx";
 import { ChartView } from "./ChartView.tsx";
 import { LyricsView } from "./LyricsView.tsx";
 import { ThemeToggle } from "./ThemeToggle.tsx";
+import { Segmented, Btn, CapoSelect } from "./ui.tsx";
 
 type Props = {
   set: Setlist;
@@ -49,15 +50,21 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
   const cur = entries[i];
   const curSongId = cur?.e.songId ?? "";
 
-  // --- Live "follow-the-leader" band sync (preview feature) ----------------
+  // --- Live "follow-the-leader" band sync ----------------------------------
   const liveId = liveSet.shareId;
   const [leading, setLeading] = useState(false); // I am broadcasting (leader)
   const [live, setLive] = useState<LiveState | null>(null); // latest session state seen
   const [following, setFollowing] = useState(true); // auto-follow when a session is live
-  const [followTranspose, setFollowTranspose] = useState<number | null>(null);
-  const [leadTranspose, setLeadTranspose] = useState(0); // current key reported by SongView
   const applyingScroll = useRef(false);
   const scrollPct = useRef(0);
+
+  // Local-only key/capo/notation (per player — capo differs by instrument, so
+  // these are never synced). Key + capo reset per song; notation is a sticky
+  // personal preference that carries across songs.
+  const [tpose, setTpose] = useState(() => cur?.e.transpose ?? 0);
+  const [capo, setCapo] = useState(() => cur?.e.capo ?? 0);
+  const [notation, setNotation] = useState<Notation>(() => cur?.e.notation ?? "names");
+  const [savedFlash, setSavedFlash] = useState(false); // brief "Saved ✓" after a leader save
 
   const go = (next: number) => {
     if (live && !leading && following) setFollowing(false); // manual nav → browse
@@ -106,6 +113,16 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
     window.scrollTo(0, 0);
     setAuto(false);
   }, [idx]);
+
+  // New song → reset local key/capo to that song's saved defaults (notation is
+  // sticky, so it is intentionally left alone).
+  useEffect(() => {
+    if (cur) {
+      setTpose(cur.e.transpose);
+      setCapo(cur.e.capo);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [i]);
 
   useEffect(() => {
     if (!auto) return;
@@ -163,7 +180,6 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
         v: 1,
         idx: i,
         songId: curSongId,
-        transpose: leadTranspose,
         view: viewMode,
         scrollPct: scrollPct.current,
         leader: "Leader",
@@ -172,7 +188,7 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
     push();
     const hb = setInterval(push, 3000);
     return () => clearInterval(hb);
-  }, [leading, liveId, i, curSongId, leadTranspose, viewMode]);
+  }, [leading, liveId, i, curSongId, viewMode]);
 
   // Leader: publish scroll position (throttled) so followers track the page.
   useEffect(() => {
@@ -188,7 +204,6 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
         v: 1,
         idx: i,
         songId: curSongId,
-        transpose: leadTranspose,
         view: viewMode,
         scrollPct: scrollPct.current,
         leader: "Leader",
@@ -197,7 +212,7 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, [leading, liveId, i, curSongId, leadTranspose, viewMode]);
+  }, [leading, liveId, i, curSongId, viewMode]);
 
   // Follower: poll the live session (skipped while leading). A session is
   // considered live only if its heartbeat is recent.
@@ -225,7 +240,6 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
     if (!live || leading || !following) return;
     if (live.idx !== i) setIdx(live.idx);
     if (live.view === "chart" || live.view === "lyrics") setViewMode(live.view);
-    if (live.transpose !== followTranspose) setFollowTranspose(live.transpose);
     const max = document.documentElement.scrollHeight - window.innerHeight;
     const target = Math.max(0, live.scrollPct) * max;
     if (Math.abs(window.scrollY - target) > 24) {
@@ -269,7 +283,6 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
       v: 1,
       idx: i,
       songId: curSongId,
-      transpose: leadTranspose,
       view: viewMode,
       scrollPct: scrollPct.current,
       leader: "Leader",
@@ -283,6 +296,18 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
     setFollowing(false);
     setLive(null);
     setLeading(true);
+  };
+
+  // Leader commits the CURRENT local key as the official saved key for this
+  // song in the service (shared key store). Always re-prompts for the PIN.
+  const saveKeyGlobal = () => {
+    if (!liveId || !curSongId) return;
+    const entered = (window.prompt("Enter the leader PIN to save this key for everyone:") || "").trim();
+    if (!entered) return;
+    setPin(entered);
+    if (cur) saveEntryKey(cur.origIdx, tpose); // updates the entry + URL + shared key store (PIN-gated)
+    setSavedFlash(true);
+    setTimeout(() => setSavedFlash(false), 2000);
   };
 
   // Swipe left → next song, right → prev. Only a mostly-horizontal drag past a
@@ -382,26 +407,80 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
   const { e: entry, origIdx } = cur!;
   const song = byId.get(entry.songId)!;
   const order = orderLabels(entry, song);
-  const isFollowing = !!live && !leading && following;
+  const barKey = song.key ? transposeKey(song.key, tpose) : null;
 
   return (
     <Shell title={liveSet.name || "Setlist"} date={liveSet.date} onPrint={printSet}>
       <div className="no-print">
-        {/* Band-sync follower banner (appears when a leader is broadcasting) */}
-        {live && !leading && (
-          <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm dark:border-emerald-800 dark:bg-emerald-950">
-            <span className="flex items-center gap-2 font-medium text-emerald-700 dark:text-emerald-300">
-              <span className={"inline-block h-2 w-2 rounded-full bg-emerald-500 " + (following ? "metro-flash" : "")} />
-              {following ? "Following the leader — live" : "Following paused"}
-            </span>
+        {/* Sticky control bar: live status + LOCAL key/capo/notation (per player,
+            not synced) + the leader's Save (re-prompts for the PIN). */}
+        <div className="sticky top-0 z-30 -mx-4 mb-3 border-b border-slate-200 bg-slate-50/90 px-4 py-2 backdrop-blur dark:border-slate-700 dark:bg-slate-950/90">
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            {leading ? (
+              <span className="flex items-center gap-1.5 rounded-md bg-rose-600 px-2.5 py-1 text-xs font-semibold text-white">
+                <span className="inline-block h-2 w-2 rounded-full bg-white metro-flash" />
+                Controlling
+              </span>
+            ) : live ? (
+              <span className="flex items-center gap-1.5 rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white">
+                <span className={"inline-block h-2 w-2 rounded-full bg-white " + (following ? "metro-flash" : "")} />
+                {following ? "Controlled" : "Paused"}
+              </span>
+            ) : null}
+
+            <Segmented
+              size="sm"
+              value={notation}
+              onChange={(v) => setNotation(v as Notation)}
+              options={[
+                { value: "names", label: "Names" },
+                { value: "roman", label: "Roman" },
+              ]}
+            />
+
+            <div className="flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700">
+              <Btn onClick={() => setTpose((t) => t - 1)} aria="key down">
+                –
+              </Btn>
+              <span className="min-w-[3.25rem] text-center text-sm font-medium tabular-nums">{barKey ?? "key?"}</span>
+              <Btn onClick={() => setTpose((t) => t + 1)} aria="key up">
+                +
+              </Btn>
+            </div>
+
+            <CapoSelect value={capo} onChange={setCapo} />
+
             <button
-              onClick={() => setFollowing((f) => !f)}
-              className="shrink-0 rounded-md bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500"
+              onClick={saveKeyGlobal}
+              title="Save this key for everyone (leader PIN). Capo & Names/Roman stay local to your device."
+              className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
             >
-              {following ? "Browse on my own" : "Re-sync"}
+              Save key
             </button>
+            {savedFlash && <span className="text-xs font-medium text-emerald-600">Saved ✓</span>}
+
+            {(tpose !== 0 || capo !== 0) && (
+              <button
+                onClick={() => {
+                  setTpose(0);
+                  setCapo(0);
+                }}
+                className="text-xs text-slate-400 underline hover:text-slate-600"
+              >
+                reset
+              </button>
+            )}
+
+            {live && !leading && (
+              <button
+                onClick={() => setFollowing((f) => !f)}
+                className="ml-auto shrink-0 rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-emerald-500"
+              >
+                {following ? "Browse on my own" : "Re-sync"}
+              </button>
+            )}
           </div>
-        )}
+        </div>
 
         <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
           {entries.map(({ e }, j) => {
@@ -485,18 +564,17 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
 
           <main className="min-w-0 flex-1 rounded-xl bg-white p-4 shadow-sm dark:bg-slate-900 sm:p-6">
             <SongView
-              key={i + ":" + entry.songId + (isFollowing ? ":f" + followTranspose : "")}
+              key={i + ":" + entry.songId}
               song={song}
-              initialTranspose={isFollowing && followTranspose != null ? followTranspose : entry.transpose}
-              initialCapo={entry.capo}
-              initialNotation={entry.notation}
+              hideKeyControls
+              transpose={tpose}
+              capo={capo}
+              notation={notation}
               initialView={viewMode}
               note={entry.note}
               onNoteChange={(v) => setNote(origIdx, v)}
               onViewChange={setViewMode}
-              onTransposeChange={setLeadTranspose}
               unlocked={unlocked}
-              onSaveKey={(t) => saveEntryKey(origIdx, t)}
             />
           </main>
         </div>

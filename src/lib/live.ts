@@ -8,11 +8,13 @@ export type LiveState = {
   v: number; // schema version
   idx: number; // current song index (in the playable order)
   songId: string; // sanity-match the song
-  transpose: number; // current live key offset
-  view: "chart" | "lyrics";
+  view: "chart" | "lyrics"; // which view the leader is showing
   scrollPct: number; // 0..1 scroll fraction
   leader: string; // display name
   t: number; // leader's clock (ms) — used to detect staleness/echo
+  // NOTE: key/capo/notation are intentionally NOT synced — they're per-player
+  // (capo differs by instrument). The leader commits the official key via the
+  // shared key store (Save), not the live channel.
 };
 
 export async function fetchLive(id: string): Promise<LiveState | null> {

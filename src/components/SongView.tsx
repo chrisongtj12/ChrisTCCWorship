@@ -18,9 +18,13 @@ type Props = {
   // Fired only on an explicit Chart/Lyrics toggle (not auto-correction), so a
   // parent can keep the chosen view "sticky" across songs.
   onViewChange?: (v: View) => void;
-  // Fired whenever the live transpose changes (mount + each +/–), so a parent
-  // can broadcast the leader's current key for band sync.
-  onTransposeChange?: (t: number) => void;
+  // Controlled key/capo/notation (Play view): when hideKeyControls is set, these
+  // drive the chart and SongView's own key/capo/notation controls are hidden so a
+  // parent control bar owns them.
+  transpose?: number;
+  capo?: number;
+  notation?: Notation;
+  hideKeyControls?: boolean;
   // Library: persist the transposed key as this song's GENERAL default (per device).
   allowSaveKey?: boolean;
   // Called after a save: in a setlist it persists the key to that set's entry;
@@ -50,11 +54,15 @@ export function SongView({
   note,
   onNoteChange,
   onViewChange,
-  onTransposeChange,
+  transpose: ctrlTranspose,
+  capo: ctrlCapo,
+  notation: ctrlNotation,
+  hideKeyControls = false,
   allowSaveKey = false,
   onSaveKey,
   unlocked = false,
 }: Props) {
+  const controlled = hideKeyControls;
   const hasChart = !!song.choRaw;
   const hasLyrics = !!song.lyrics;
   const hasMerged = !!song.merged;
@@ -63,21 +71,24 @@ export function SongView({
   const [view, setView] = useState<View | "combined">(hasChart ? initialView : "lyrics");
   // In the library, seed from any saved per-song key override; in a setlist use
   // the entry's transpose. `savedKey` tracks what's persisted (for the Save button).
-  const [transpose, setTranspose] = useState(() =>
+  const [transposeInt, setTranspose] = useState(() =>
     allowSaveKey ? readSongKey(song.id) : initialTranspose
   );
   const [savedKey, setSavedKey] = useState(() =>
     allowSaveKey ? readSongKey(song.id) : initialTranspose
   );
   const canSaveKey = allowSaveKey || !!onSaveKey;
+  const transpose = controlled ? ctrlTranspose ?? 0 : transposeInt;
 
   const saveKey = () => {
     if (allowSaveKey) writeSongKey(song.id, transpose); // global default
     onSaveKey?.(transpose); // setlist: persist to the entry; library: refresh tag
     setSavedKey(transpose);
   };
-  const [capo, setCapo] = useState(initialCapo);
-  const [notation, setNotation] = useState<Notation>(initialNotation);
+  const [capoInt, setCapo] = useState(initialCapo);
+  const [notationInt, setNotation] = useState<Notation>(initialNotation);
+  const capo = controlled ? ctrlCapo ?? 0 : capoInt;
+  const notation = controlled ? ctrlNotation ?? "names" : notationInt;
   const [scale, setScale] = useState<number>(() => {
     const v = parseFloat(localStorage.getItem(SCALE_KEY) || "1");
     return Number.isNaN(v) ? 1 : clampScale(v);
@@ -146,11 +157,6 @@ export function SongView({
     if (view === "lyrics" && !hasLyrics) setView("chart");
     if (view === "combined" && !hasMerged) setView(hasChart ? "chart" : "lyrics");
   }, [view, hasChart, hasLyrics, hasMerged]);
-
-  // Report the current key up (mount + every change) for live band sync.
-  useEffect(() => {
-    onTransposeChange?.(transpose);
-  }, [transpose, onTransposeChange]);
 
   const soundingKey = song.key ? transposeKey(song.key, transpose) : null;
 
@@ -234,7 +240,7 @@ export function SongView({
           </Btn>
         </div>
 
-        {view !== "lyrics" && (
+        {!controlled && view !== "lyrics" && (
           <>
             <div className="flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700">
               <Btn onClick={() => setTranspose((t) => t - 1)} aria="transpose down">
