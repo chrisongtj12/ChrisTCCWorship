@@ -38,6 +38,7 @@ type Props = {
 
 const SCALE_KEY = "tcc.fontscale";
 const FIT_KEY = "tcc.fitchart";
+const COLS_KEY = "tcc.chartcols";
 function clampScale(v: number): number {
   return Math.min(2.2, Math.max(0.4, Math.round(v * 10) / 10));
 }
@@ -105,6 +106,29 @@ export function SongView({
     const v = localStorage.getItem(FIT_KEY);
     return v === "1" ? true : v === "0" ? false : fitDefault;
   });
+  // Two-column chart flow (great in landscape — more song per screen). The
+  // setting is remembered, but only takes effect on a wide screen, so rotating
+  // to portrait gracefully falls back to one column.
+  const [cols, setCols] = useState<number>(() => (localStorage.getItem(COLS_KEY) === "2" ? 2 : 1));
+  const [wide, setWide] = useState<boolean>(
+    () => typeof window !== "undefined" && window.matchMedia("(min-width: 700px)").matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 700px)");
+    const on = () => setWide(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  const effCols = cols === 2 && wide ? 2 : 1;
+  const toggleCols = () => {
+    const n = cols === 2 ? 1 : 2;
+    setCols(n);
+    try {
+      localStorage.setItem(COLS_KEY, String(n));
+    } catch {
+      /* ignore */
+    }
+  };
   const chartBoxRef = useRef<HTMLDivElement>(null);
   const scaleRef = useRef(scale);
   scaleRef.current = scale;
@@ -212,7 +236,7 @@ export function SongView({
     window.addEventListener("resize", fitNow);
     return () => window.removeEventListener("resize", fitNow);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fit, song.id, view, transpose, capo, notation]);
+  }, [fit, song.id, view, transpose, capo, notation, effCols]);
 
   useEffect(() => {
     if (view === "chart" && !hasChart) setView("lyrics");
@@ -315,6 +339,21 @@ export function SongView({
           ⤢ Fit
         </button>
 
+        {view !== "lyrics" && (
+          <button
+            onClick={toggleCols}
+            title="Two-column chart (best in landscape — more of the song per screen)"
+            className={
+              "rounded-lg px-2.5 py-1 text-xs font-medium " +
+              (cols === 2
+                ? "bg-sky-600 text-white hover:bg-sky-500"
+                : "border border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800")
+            }
+          >
+            ▥ {cols === 2 ? "2 cols" : "1 col"}
+          </button>
+        )}
+
         {!controlled && view !== "lyrics" && (
           <>
             <div className="flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700">
@@ -379,9 +418,9 @@ export function SongView({
       <div ref={chartBoxRef} className="overflow-x-auto">
         <div style={{ zoom: scale } as React.CSSProperties}>
           {view === "combined" && hasMerged ? (
-            <ChartView choRaw={song.merged!} originalKey={song.key} transpose={transpose} capo={capo} notation={notation} />
+            <ChartView choRaw={song.merged!} originalKey={song.key} transpose={transpose} capo={capo} notation={notation} columns={effCols} />
           ) : view === "chart" && hasChart ? (
-            <ChartView choRaw={song.choRaw!} originalKey={song.key} transpose={transpose} capo={capo} notation={notation} />
+            <ChartView choRaw={song.choRaw!} originalKey={song.key} transpose={transpose} capo={capo} notation={notation} columns={effCols} />
           ) : hasLyrics ? (
             <LyricsView lyrics={song.lyrics!} />
           ) : (
