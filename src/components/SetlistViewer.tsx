@@ -576,7 +576,7 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
                   {e.note}
                 </div>
               )}
-              <div className="mt-2">
+              <div className="mt-2 text-[15px]">
                 {e.view === "chart" && s.choRaw ? (
                   <ChartView choRaw={s.choRaw} originalKey={s.key} transpose={e.transpose} capo={e.capo} notation={e.notation} />
                 ) : s.lyrics ? (

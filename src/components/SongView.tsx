@@ -405,7 +405,9 @@ export function SongView({
       )}
 
       <div ref={chartBoxRef} className="overflow-x-auto">
-        <div style={{ zoom: scale } as React.CSSProperties}>
+        {/* Scale by font-size (not CSS zoom — zoom is a no-op on iOS Safari).
+            ChartView/LyricsView size everything in em, so this scales cleanly. */}
+        <div style={{ fontSize: `${scale * 16}px` }}>
           {view === "combined" && hasMerged ? (
             <ChartView choRaw={song.merged!} originalKey={song.key} transpose={transpose} capo={capo} notation={notation} columns={cols} />
           ) : view === "chart" && hasChart ? (

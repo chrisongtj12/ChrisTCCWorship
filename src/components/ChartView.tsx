@@ -28,7 +28,7 @@ export function ChartView({ choRaw, originalKey, transpose, capo, notation, colu
     switch (line.type) {
       case "lyric":
         return (
-          <div key={idx} className="flex flex-wrap items-end leading-tight mb-1.5 font-mono">
+          <div key={idx} className="flex flex-wrap items-end leading-tight mb-[0.4em] font-mono">
             {line.segments.map((seg, i) => {
               const label = seg.chord
                 ? notation === "roman"
@@ -37,7 +37,7 @@ export function ChartView({ choRaw, originalKey, transpose, capo, notation, colu
                 : "";
               return (
                 <span key={i} className="inline-flex flex-col">
-                  <span className="h-5 text-sky-600 dark:text-sky-400 font-semibold whitespace-pre">
+                  <span className="h-[1.35em] text-sky-600 dark:text-sky-400 font-semibold whitespace-pre">
                     {label ? label + " " : ""}
                   </span>
                   {/* zero-width space keeps an empty (trailing/adjacent-chord) cell full-height,
@@ -51,10 +51,10 @@ export function ChartView({ choRaw, originalKey, transpose, capo, notation, colu
           </div>
         );
       case "blank":
-        return <div key={idx} className="h-3" />;
+        return <div key={idx} className="h-[0.8em]" />;
       case "text":
         return (
-          <div key={idx} className="text-xs text-slate-400 dark:text-slate-500 font-mono">
+          <div key={idx} className="text-[0.8em] text-slate-400 dark:text-slate-500 font-mono">
             {line.text}
           </div>
         );
@@ -66,7 +66,7 @@ export function ChartView({ choRaw, originalKey, transpose, capo, notation, colu
   const renderSection = (sec: (typeof sections)[number], si: number) => (
     <div key={si}>
       {sec.label && (
-        <div className="mt-5 mb-2 text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+        <div className="mt-[1.3em] mb-[0.5em] text-[0.8em] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
           {sec.label}
         </div>
       )}
@@ -97,12 +97,12 @@ export function ChartView({ choRaw, originalKey, transpose, capo, notation, colu
       }
     }
     return (
-      <div className="flex items-start gap-8 text-[15px] sm:text-base">
+      <div className="flex items-start gap-[2em]">
         <div className="min-w-0">{sections.slice(0, split).map(renderSection)}</div>
         <div className="min-w-0">{sections.slice(split).map(renderSection)}</div>
       </div>
     );
   }
 
-  return <div className="text-[15px] sm:text-base">{sections.map(renderSection)}</div>;
+  return <div>{sections.map(renderSection)}</div>;
 }
