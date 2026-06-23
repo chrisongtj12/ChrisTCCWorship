@@ -75,18 +75,25 @@ export function ChartView({ choRaw, originalKey, transpose, capo, notation, colu
   );
 
   // Two columns: split sections across two side-by-side columns, balanced by
-  // line count. Done explicitly (not CSS multicol) so it survives the zoom-based
-  // Fit scaling and lets Fit size both columns to the screen width.
+  // ESTIMATED RENDERED HEIGHT (lyric rows are tallest, then labels), and pick the
+  // break point that makes the two columns most even. Done explicitly (not CSS
+  // multicol) so it survives the zoom-based Fit scaling and lets Fit size both
+  // columns to the screen width.
   if (columns === 2 && sections.length > 1) {
-    const weight = (s: (typeof sections)[number]) => (s.label ? 1 : 0) + s.lines.length;
-    const total = sections.reduce((a, s) => a + weight(s), 0);
-    let acc = 0;
-    let split = sections.length;
-    for (let i = 0; i < sections.length; i++) {
-      acc += weight(sections[i]);
-      if (acc >= total / 2) {
-        split = i + 1;
-        break;
+    const lineH = (l: SongLine) => (l.type === "lyric" ? 46 : l.type === "blank" ? 12 : 20);
+    const secH = (s: (typeof sections)[number]) =>
+      (s.label ? 44 : 0) + s.lines.reduce((a, l) => a + lineH(l), 0);
+    const heights = sections.map(secH);
+    const total = heights.reduce((a, b) => a + b, 0);
+    let prefix = 0;
+    let split = 1;
+    let bestDiff = Infinity;
+    for (let i = 1; i < sections.length; i++) {
+      prefix += heights[i - 1]; // height of sections [0 .. i-1]
+      const diff = Math.abs(2 * prefix - total); // |left − right|
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        split = i;
       }
     }
     return (
