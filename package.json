@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build:songs": "node scripts/build-songs.mjs",
+    "durations": "node scripts/fetch-durations.mjs",
     "merge": "node scripts/merge-lyrics.mjs",
     "dev": "npm run build:songs && vite",
     "build": "npm run build:songs && tsc -b && vite build",

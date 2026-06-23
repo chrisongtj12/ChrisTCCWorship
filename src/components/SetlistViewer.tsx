@@ -23,6 +23,12 @@ function orderLabels(entry: SetEntry, song: Song): string[] {
   return entry.flow && entry.flow.length ? entry.flow : availableSections(song);
 }
 
+function fmtDuration(sec: number): string {
+  const m = Math.floor(sec / 60);
+  const s = Math.round(sec % 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
 export function SetlistViewer({ set, songs, unlocked = false }: Props) {
   const byId = new Map(songs.map((s) => [s.id, s]));
   // Editable working copy so cue notes can be tweaked live (persisted to the URL).
@@ -40,15 +46,12 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
   // explicit toggles so it carries across songs as you nav/swipe.
   const [viewMode, setViewMode] = useState<View>(() => entries[0]?.e.view ?? "chart");
   const touchStart = useRef<{ x: number; y: number } | null>(null);
-  const [speed, setSpeed] = useState<number>(() => {
-    const v = parseInt(localStorage.getItem("tcc.scrollspeed") || "40", 10);
-    return Number.isNaN(v) ? 40 : v;
-  });
 
   const n = entries.length;
   const i = n ? Math.min(idx, n - 1) : 0;
   const cur = entries[i];
   const curSongId = cur?.e.songId ?? "";
+  const curDuration = (cur ? byId.get(cur.e.songId)?.duration : null) ?? 0; // seconds; 0 = unknown
 
   // --- Live "follow-the-leader" band sync ----------------------------------
   const liveId = liveSet.shareId;
@@ -123,14 +126,18 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [i]);
 
+  // Auto-scroll paces the whole chart to finish at the song's end: velocity =
+  // remaining scroll height / song duration (falls back to ~3.5 min if unknown).
   useEffect(() => {
     if (!auto) return;
+    const durationSec = curDuration > 0 ? curDuration : 210;
     let raf = 0;
     let last = performance.now();
     const tick = (now: number) => {
       const dt = (now - last) / 1000;
       last = now;
-      window.scrollBy(0, speed * dt);
+      const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+      if (scrollable > 0) window.scrollBy(0, (scrollable / durationSec) * dt);
       if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 1) {
         setAuto(false);
         return;
@@ -139,7 +146,7 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [auto, speed]);
+  }, [auto, curDuration]);
 
   // Keep the screen awake while leading (released on leaving the view / tab
   // hidden; re-acquired when visible again). No-op where unsupported.
@@ -321,15 +328,6 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
     }
   };
 
-  const changeSpeed = (d: number) => {
-    const v = Math.min(200, Math.max(10, speed + d));
-    setSpeed(v);
-    try {
-      localStorage.setItem("tcc.scrollspeed", String(v));
-    } catch {
-      /* ignore */
-    }
-  };
 
   // Edit a cue note for the entry at original index. Persist into the URL hash
   // (local fallback + keeps the copyable link current) and, if this set has a
@@ -474,15 +472,9 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
           >
             {auto ? "⏸ Stop scroll" : "▶ Auto-scroll"}
           </button>
-          <div className="flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700">
-            <button onClick={() => changeSpeed(-10)} className="px-2.5 py-1 text-slate-500 hover:text-sky-600">
-              –
-            </button>
-            <span className="min-w-[4.5rem] text-center text-xs text-slate-400">speed {speed}</span>
-            <button onClick={() => changeSpeed(10)} className="px-2.5 py-1 text-slate-500 hover:text-sky-600">
-              +
-            </button>
-          </div>
+          <span className="text-xs text-slate-400">
+            {curDuration > 0 ? `paces to the song · ${fmtDuration(curDuration)}` : "paces to the song length"}
+          </span>
           {liveId && (
             <button
               onClick={toggleLead}
@@ -528,6 +520,7 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
               key={i + ":" + entry.songId}
               song={song}
               hideKeyControls
+              fitDefault
               transpose={tpose}
               capo={capo}
               notation={notation}

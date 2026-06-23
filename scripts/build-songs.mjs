@@ -10,6 +10,25 @@ const SONGS_DIR = join(root, "songs");
 const MERGED_DIR = join(root, "songs", "merged");
 const OUT_DIR = join(root, "public");
 
+// Song durations in seconds, keyed by song id. Populated by
+// `npm run durations` (Spotify lookup) and committed, so the Vercel build needs
+// no Spotify credentials. A {duration: m:ss} chart directive overrides this.
+let DURATIONS = {};
+try {
+  DURATIONS = JSON.parse(readFileSync(join(SONGS_DIR, "durations.json"), "utf8"));
+} catch {
+  /* no durations cache yet */
+}
+
+function parseDuration(v) {
+  if (v == null) return null;
+  const s = String(v).trim();
+  const mmss = s.match(/^(\d+):(\d{1,2})$/);
+  if (mmss) return parseInt(mmss[1], 10) * 60 + parseInt(mmss[2], 10);
+  const n = parseInt(s, 10);
+  return Number.isNaN(n) ? null : n;
+}
+
 // AI-merged charts (chords over TCC wording), committed by `npm run merge`.
 function readMerged(id) {
   try {
@@ -193,6 +212,7 @@ for (const f of choFiles) {
     artist: getDirective(cho, "artist"),
     tempo: getDirective(cho, "tempo"),
     time: getDirective(cho, "time"),
+    duration: parseDuration(getDirective(cho, "duration")) ?? DURATIONS[id] ?? null,
     choRaw: cho,
     lyrics,
     merged: readMerged(id),
@@ -214,6 +234,7 @@ for (const le of lyricEntries) {
     artist: null,
     tempo: null,
     time: null,
+    duration: DURATIONS[id] ?? null,
     choRaw: null,
     lyrics: le.data,
     merged: null,

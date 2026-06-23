@@ -14,9 +14,10 @@ type Props = {
   transpose: number;
   capo: number;
   notation: "names" | "roman";
+  columns?: number; // 1 (default) or 2 — multi-column flow for landscape
 };
 
-export function ChartView({ choRaw, originalKey, transpose, capo, notation }: Props) {
+export function ChartView({ choRaw, originalKey, transpose, capo, notation, columns = 1 }: Props) {
   // The song chart is FIXED — always rendered in full, natural order.
   const sections = useMemo(() => groupChartSections(parseChordPro(choRaw)), [choRaw]);
 
@@ -62,18 +63,46 @@ export function ChartView({ choRaw, originalKey, transpose, capo, notation }: Pr
     }
   }
 
-  return (
-    <div className="text-[15px] sm:text-base">
-      {sections.map((sec, si) => (
-        <div key={si}>
-          {sec.label && (
-            <div className="mt-5 mb-2 text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-              {sec.label}
-            </div>
-          )}
-          {sec.lines.map((line, li) => renderLine(line, li))}
+  const renderSection = (sec: (typeof sections)[number], si: number) => (
+    <div key={si}>
+      {sec.label && (
+        <div className="mt-5 mb-2 text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+          {sec.label}
         </div>
-      ))}
+      )}
+      {sec.lines.map((line, li) => renderLine(line, li))}
     </div>
   );
+
+  // Two columns: split sections across two side-by-side columns, balanced by
+  // ESTIMATED RENDERED HEIGHT (lyric rows are tallest, then labels), and pick the
+  // break point that makes the two columns most even. Done explicitly (not CSS
+  // multicol) so it survives the zoom-based Fit scaling and lets Fit size both
+  // columns to the screen width.
+  if (columns === 2 && sections.length > 1) {
+    const lineH = (l: SongLine) => (l.type === "lyric" ? 46 : l.type === "blank" ? 12 : 20);
+    const secH = (s: (typeof sections)[number]) =>
+      (s.label ? 44 : 0) + s.lines.reduce((a, l) => a + lineH(l), 0);
+    const heights = sections.map(secH);
+    const total = heights.reduce((a, b) => a + b, 0);
+    let prefix = 0;
+    let split = 1;
+    let bestDiff = Infinity;
+    for (let i = 1; i < sections.length; i++) {
+      prefix += heights[i - 1]; // height of sections [0 .. i-1]
+      const diff = Math.abs(2 * prefix - total); // |left − right|
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        split = i;
+      }
+    }
+    return (
+      <div className="flex items-start gap-8 text-[15px] sm:text-base">
+        <div className="min-w-0">{sections.slice(0, split).map(renderSection)}</div>
+        <div className="min-w-0">{sections.slice(split).map(renderSection)}</div>
+      </div>
+    );
+  }
+
+  return <div className="text-[15px] sm:text-base">{sections.map(renderSection)}</div>;
 }
