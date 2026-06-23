@@ -528,6 +528,7 @@ export function SetlistViewer({ set, songs, unlocked = false }: Props) {
               key={i + ":" + entry.songId}
               song={song}
               hideKeyControls
+              fitDefault
               transpose={tpose}
               capo={capo}
               notation={notation}

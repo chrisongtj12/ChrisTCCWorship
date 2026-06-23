@@ -25,6 +25,8 @@ type Props = {
   capo?: number;
   notation?: Notation;
   hideKeyControls?: boolean;
+  // Default the "Fit to screen" mode on (Play view) until the user toggles it.
+  fitDefault?: boolean;
   // Library: persist the transposed key as this song's GENERAL default (per device).
   allowSaveKey?: boolean;
   // Called after a save: in a setlist it persists the key to that set's entry;
@@ -35,6 +37,7 @@ type Props = {
 };
 
 const SCALE_KEY = "tcc.fontscale";
+const FIT_KEY = "tcc.fitchart";
 function clampScale(v: number): number {
   return Math.min(2.2, Math.max(0.6, Math.round(v * 10) / 10));
 }
@@ -58,6 +61,7 @@ export function SongView({
   capo: ctrlCapo,
   notation: ctrlNotation,
   hideKeyControls = false,
+  fitDefault = false,
   allowSaveKey = false,
   onSaveKey,
   unlocked = false,
@@ -93,6 +97,17 @@ export function SongView({
     const v = parseFloat(localStorage.getItem(SCALE_KEY) || "1");
     return Number.isNaN(v) ? 1 : clampScale(v);
   });
+  // "Fit" mode: auto-scale the chart to fill the width and cap height to ~1.5
+  // screens, so songs are easy to read and need little scrolling (which also
+  // tightens band-sync, since less scroll = less proportional drift). Defaults
+  // on in the Play view (fitDefault); an explicit toggle is remembered.
+  const [fit, setFit] = useState<boolean>(() => {
+    const v = localStorage.getItem(FIT_KEY);
+    return v === "1" ? true : v === "0" ? false : fitDefault;
+  });
+  const chartBoxRef = useRef<HTMLDivElement>(null);
+  const scaleRef = useRef(scale);
+  scaleRef.current = scale;
 
   // Metronome / tempo
   const bpmKey = `tcc.bpm.${song.id}`;
@@ -142,8 +157,7 @@ export function SongView({
     return () => clearInterval(id);
   }, [metro, bpm, beats]);
 
-  const changeScale = (delta: number) => {
-    const c = clampScale(scale + delta);
+  const storeScale = (c: number) => {
     setScale(c);
     try {
       localStorage.setItem(SCALE_KEY, String(c));
@@ -151,6 +165,54 @@ export function SongView({
       /* ignore */
     }
   };
+
+  const changeScale = (delta: number) => {
+    // manual zoom turns off auto-fit (and is remembered)
+    setFit(false);
+    try {
+      localStorage.setItem(FIT_KEY, "0");
+    } catch {
+      /* ignore */
+    }
+    storeScale(clampScale(scale + delta));
+  };
+
+  const setFitMode = (on: boolean) => {
+    setFit(on);
+    try {
+      localStorage.setItem(FIT_KEY, on ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+    // Turning Fit off restores your saved manual text size.
+    if (!on) {
+      const v = parseFloat(localStorage.getItem(SCALE_KEY) || "1");
+      setScale(Number.isNaN(v) ? 1 : clampScale(v));
+    }
+  };
+
+  // When Fit is on, size the chart to fill the width and cap height to ~1.5
+  // screens (down to a 0.4 floor so long songs still fit). Re-runs on song /
+  // view / key / capo / notation changes and on resize. The fit scale is
+  // applied transiently (setScale) so it never overwrites your saved manual size.
+  useEffect(() => {
+    if (!fit) return;
+    const fitNow = () => {
+      const el = chartBoxRef.current;
+      if (!el) return;
+      const s = scaleRef.current || 1;
+      const naturalW = el.scrollWidth / s;
+      const naturalH = el.scrollHeight / s;
+      if (naturalW < 8 || naturalH < 8) return;
+      const raw = Math.min(el.clientWidth / naturalW, (window.innerHeight * 1.5) / naturalH);
+      const next = Math.min(2.2, Math.max(0.4, raw));
+      if (Math.abs(next - scaleRef.current) > 0.02) setScale(next);
+    };
+    fitNow(); // DOM is already committed when this effect runs
+    window.addEventListener("resize", fitNow);
+    return () => window.removeEventListener("resize", fitNow);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fit, song.id, view, transpose, capo, notation]);
 
   useEffect(() => {
     if (view === "chart" && !hasChart) setView("lyrics");
@@ -240,6 +302,19 @@ export function SongView({
           </Btn>
         </div>
 
+        <button
+          onClick={() => setFitMode(!fit)}
+          title="Fit the chart to the screen (fills width, caps height to ~2 screens)"
+          className={
+            "rounded-lg px-2.5 py-1 text-xs font-medium " +
+            (fit
+              ? "bg-sky-600 text-white hover:bg-sky-500"
+              : "border border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800")
+          }
+        >
+          ⤢ Fit
+        </button>
+
         {!controlled && view !== "lyrics" && (
           <>
             <div className="flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700">
@@ -301,16 +376,18 @@ export function SongView({
         </div>
       )}
 
-      <div className="overflow-x-auto" style={{ zoom: scale } as React.CSSProperties}>
-        {view === "combined" && hasMerged ? (
-          <ChartView choRaw={song.merged!} originalKey={song.key} transpose={transpose} capo={capo} notation={notation} />
-        ) : view === "chart" && hasChart ? (
-          <ChartView choRaw={song.choRaw!} originalKey={song.key} transpose={transpose} capo={capo} notation={notation} />
-        ) : hasLyrics ? (
-          <LyricsView lyrics={song.lyrics!} />
-        ) : (
-          <p className="text-slate-400">No {view} available.</p>
-        )}
+      <div ref={chartBoxRef} className="overflow-x-auto">
+        <div style={{ zoom: scale } as React.CSSProperties}>
+          {view === "combined" && hasMerged ? (
+            <ChartView choRaw={song.merged!} originalKey={song.key} transpose={transpose} capo={capo} notation={notation} />
+          ) : view === "chart" && hasChart ? (
+            <ChartView choRaw={song.choRaw!} originalKey={song.key} transpose={transpose} capo={capo} notation={notation} />
+          ) : hasLyrics ? (
+            <LyricsView lyrics={song.lyrics!} />
+          ) : (
+            <p className="text-slate-400">No {view} available.</p>
+          )}
+        </div>
       </div>
     </div>
   );
