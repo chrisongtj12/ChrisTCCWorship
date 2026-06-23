@@ -106,20 +106,9 @@ export function SongView({
     const v = localStorage.getItem(FIT_KEY);
     return v === "1" ? true : v === "0" ? false : fitDefault;
   });
-  // Two-column chart flow (great in landscape — more song per screen). The
-  // setting is remembered, but only takes effect on a wide screen, so rotating
-  // to portrait gracefully falls back to one column.
+  // Two-column chart flow (great in landscape — more song per screen). A plain
+  // toggle: it switches between one and two columns on any screen, remembered.
   const [cols, setCols] = useState<number>(() => (localStorage.getItem(COLS_KEY) === "2" ? 2 : 1));
-  const [wide, setWide] = useState<boolean>(
-    () => typeof window !== "undefined" && window.matchMedia("(min-width: 700px)").matches
-  );
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 700px)");
-    const on = () => setWide(mq.matches);
-    mq.addEventListener("change", on);
-    return () => mq.removeEventListener("change", on);
-  }, []);
-  const effCols = cols === 2 && wide ? 2 : 1;
   const toggleCols = () => {
     const n = cols === 2 ? 1 : 2;
     setCols(n);
@@ -236,7 +225,7 @@ export function SongView({
     window.addEventListener("resize", fitNow);
     return () => window.removeEventListener("resize", fitNow);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fit, song.id, view, transpose, capo, notation, effCols]);
+  }, [fit, song.id, view, transpose, capo, notation, cols]);
 
   useEffect(() => {
     if (view === "chart" && !hasChart) setView("lyrics");
@@ -418,9 +407,9 @@ export function SongView({
       <div ref={chartBoxRef} className="overflow-x-auto">
         <div style={{ zoom: scale } as React.CSSProperties}>
           {view === "combined" && hasMerged ? (
-            <ChartView choRaw={song.merged!} originalKey={song.key} transpose={transpose} capo={capo} notation={notation} columns={effCols} />
+            <ChartView choRaw={song.merged!} originalKey={song.key} transpose={transpose} capo={capo} notation={notation} columns={cols} />
           ) : view === "chart" && hasChart ? (
-            <ChartView choRaw={song.choRaw!} originalKey={song.key} transpose={transpose} capo={capo} notation={notation} columns={effCols} />
+            <ChartView choRaw={song.choRaw!} originalKey={song.key} transpose={transpose} capo={capo} notation={notation} columns={cols} />
           ) : hasLyrics ? (
             <LyricsView lyrics={song.lyrics!} />
           ) : (
