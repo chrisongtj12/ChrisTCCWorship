@@ -39,7 +39,7 @@ type Props = {
 const SCALE_KEY = "tcc.fontscale";
 const FIT_KEY = "tcc.fitchart";
 function clampScale(v: number): number {
-  return Math.min(2.2, Math.max(0.6, Math.round(v * 10) / 10));
+  return Math.min(2.2, Math.max(0.4, Math.round(v * 10) / 10));
 }
 
 function beatsFromTime(time: string | null): number {
