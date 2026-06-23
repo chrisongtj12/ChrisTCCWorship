@@ -9,6 +9,7 @@ export type Song = {
   artist: string | null;
   tempo: string | null;
   time: string | null;
+  duration: number | null; // song length in seconds (for length-matched auto-scroll)
   choRaw: string | null;
   lyrics: Lyrics | null;
   // AI-merged chart: chart chords positioned over the TCC lyric wording.
