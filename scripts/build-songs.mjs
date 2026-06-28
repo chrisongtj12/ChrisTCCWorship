@@ -134,9 +134,15 @@ function parseLyrics(rawText) {
       sections.push(current);
       continue;
     }
-    if (!current) {
-      if (title === null) title = t; // first pre-section line = title
+    if (title === null) {
+      title = t; // first pre-section line = title
       continue;
+    }
+    if (!current) {
+      // body text with no section header yet → one default (unlabeled) section,
+      // so songs without VERSE/CHORUS markers still show their lyrics
+      current = { label: "", lines: [] };
+      sections.push(current);
     }
     current.lines.push(t);
   }
@@ -222,7 +228,9 @@ for (const f of choFiles) {
 
 for (const le of lyricEntries) {
   if (usedLyrics.has(le.file)) continue;
-  const title = le.data.title || le.stem;
+  let title = le.data.title || le.stem;
+  // TCC lyric docs put the title in ALL CAPS on the first line — title-case it.
+  if (title && title === title.toUpperCase() && /[A-Z]/.test(title)) title = titleCase(title);
   const id = slugify(title);
   if (seenIds.has(id)) continue;
   seenIds.add(id);
