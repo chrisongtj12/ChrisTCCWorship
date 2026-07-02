@@ -210,6 +210,13 @@ export function SongView({
   // applied transiently (setScale) so it never overwrites your saved manual size.
   useEffect(() => {
     if (!fit) return;
+    // Fit is chart-only: plain lyrics don't have the wide-chord-line problem,
+    // so they stay at the manual text size.
+    if (view === "lyrics") {
+      const v = parseFloat(localStorage.getItem(SCALE_KEY) || "1");
+      setScale(Number.isNaN(v) ? 1 : clampScale(v));
+      return;
+    }
     const fitNow = () => {
       const el = chartBoxRef.current;
       if (!el) return;
@@ -243,7 +250,9 @@ export function SongView({
       </div>
       {song.ccli && <div className="mb-2 text-xs text-slate-400">CCLI #{song.ccli}</div>}
 
-      {/* Tempo + metronome bar */}
+      {/* Tempo + metronome bar — hidden for lyrics-only songs with no tempo
+          data, where a default "120 BPM" would just be made up. */}
+      {(song.tempo || hasChart) && (
       <div className="mb-3 flex flex-wrap items-center gap-3 rounded-lg bg-slate-100 px-3 py-2 dark:bg-slate-800">
         {song.time && (
           <span className="text-base font-bold tabular-nums" title="Time signature">
@@ -290,6 +299,7 @@ export function SongView({
         </button>
         {metro && <span className="text-xs text-slate-400 tabular-nums">beat {beat + 1}/{beats}</span>}
       </div>
+      )}
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <Segmented
@@ -315,18 +325,20 @@ export function SongView({
           </Btn>
         </div>
 
-        <button
-          onClick={() => setFitMode(!fit)}
-          title="Fit the chart to the screen (fills width, caps height to ~2 screens)"
-          className={
-            "rounded-lg px-2.5 py-1 text-xs font-medium " +
-            (fit
-              ? "bg-sky-600 text-white hover:bg-sky-500"
-              : "border border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800")
-          }
-        >
-          ⤢ Fit
-        </button>
+        {view !== "lyrics" && (
+          <button
+            onClick={() => setFitMode(!fit)}
+            title="Fit the chart to the screen (fills width, caps height to ~1.5 screens)"
+            className={
+              "rounded-lg px-2.5 py-1 text-xs font-medium " +
+              (fit
+                ? "bg-sky-600 text-white hover:bg-sky-500"
+                : "border border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800")
+            }
+          >
+            ⤢ Fit
+          </button>
+        )}
 
         {view !== "lyrics" && (
           <button

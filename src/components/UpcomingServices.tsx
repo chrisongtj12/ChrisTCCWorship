@@ -14,6 +14,15 @@ type Props = {
 export function UpcomingServices({ services, songs, onEdit }: Props) {
   const byId = useMemo(() => new Map(songs.map((s) => [s.id, s])), [songs]);
 
+  // Show only current/future services (a service stays visible through the day
+  // after, for post-service reference). Past ones remain in the shared store.
+  const visible = useMemo(() => {
+    const cutoff = new Date();
+    cutoff.setHours(0, 0, 0, 0);
+    cutoff.setDate(cutoff.getDate() - 1);
+    return services.filter((s) => new Date(s.date + "T00:00:00") >= cutoff);
+  }, [services]);
+
   const play = (svc: Service) => {
     window.location.hash = "s=" + encodeSetlist(serviceToSetlist(svc));
   };
@@ -23,11 +32,11 @@ export function UpcomingServices({ services, songs, onEdit }: Props) {
       <div className="fg-rule mb-4 flex items-baseline justify-between pb-2">
         <h2 className="text-xl font-bold tracking-tight">Upcoming Services</h2>
         <span className="fg-count">
-          {services.length} {services.length === 1 ? "service" : "services"}
+          {visible.length} {visible.length === 1 ? "service" : "services"}
         </span>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {services.map((svc, i) => (
+        {visible.map((svc, i) => (
           <div
             key={svc.date}
             style={{ animationDelay: `${i * 80}ms` }}
