@@ -19,28 +19,73 @@ function effectiveKey(s: Song): string {
 export function LibraryView({ songs, onAddToSet, unlocked = false }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(songs[0]?.id ?? null);
   const [query, setQuery] = useState("");
+  // Most of the library is lyrics-only; sets are usually built from charted songs.
+  const [chartedOnly, setChartedOnly] = useState(false);
   // Bumped when a song's key is saved, so the key tags re-read the new defaults.
   const [, bumpKeys] = useState(0);
 
+  // Catalogue numbers are fixed per song (position in the full library).
+  const numById = useMemo(() => {
+    const m = new Map<string, string>();
+    songs.forEach((s, i) => m.set(s.id, String(i + 1).padStart(2, "0")));
+    return m;
+  }, [songs]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return q ? songs.filter((s) => s.title.toLowerCase().includes(q)) : songs;
-  }, [songs, query]);
+    let list = chartedOnly ? songs.filter((s) => s.choRaw) : songs;
+    if (q) {
+      list = list.filter(
+        (s) => s.title.toLowerCase().includes(q) || (s.artist ?? "").toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [songs, query, chartedOnly]);
 
   const song = songs.find((s) => s.id === selectedId) ?? null;
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-[240px_1fr]">
-      <div>
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-[260px_1fr]">
+      {/* Sticky on desktop so the catalogue keeps its own scroll beside the chart. */}
+      <div className="sm:sticky sm:top-4 sm:self-start">
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search songs…"
+          placeholder="Search songs or artists…"
           className="fgsearch mb-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
         />
-        <nav className="fgnav flex max-h-[52vh] flex-col gap-2 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 sm:max-h-none sm:overflow-visible sm:rounded-none sm:border-0">
+        <div className="mb-2 flex gap-1.5 text-xs">
+          <button
+            onClick={() => setChartedOnly(false)}
+            className={
+              "rounded-md px-2.5 py-1 font-medium " +
+              (!chartedOnly
+                ? "bg-sky-600 text-white"
+                : "border border-slate-200 text-slate-500 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800")
+            }
+          >
+            All ({songs.length})
+          </button>
+          <button
+            onClick={() => setChartedOnly(true)}
+            className={
+              "rounded-md px-2.5 py-1 font-medium " +
+              (chartedOnly
+                ? "bg-sky-600 text-white"
+                : "border border-slate-200 text-slate-500 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800")
+            }
+          >
+            With charts ({songs.filter((s) => s.choRaw).length})
+          </button>
+        </div>
+        <nav className="fgnav flex max-h-[52vh] flex-col gap-2 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 sm:max-h-[calc(100vh-11rem)] sm:rounded-none sm:border-0 sm:border-y sm:border-slate-200 sm:dark:border-slate-700">
+          {filtered.length === 0 && (
+            <p className="px-3 py-6 text-center text-sm text-slate-400">
+              No songs match “{query.trim()}”.
+            </p>
+          )}
           {filtered.map((s, i) => {
-            const num = String(songs.findIndex((x) => x.id === s.id) + 1).padStart(2, "0");
+            const num = numById.get(s.id)!;
             const selected = s.id === selectedId;
             return (
               <div
@@ -65,16 +110,19 @@ export function LibraryView({ songs, onAddToSet, unlocked = false }: Props) {
                   </span>
                   <span className="min-w-0 flex-1">
                     <div className="fg-title font-medium">{s.title}</div>
-                    <div className="fg-attr fg-only truncate text-xs">{s.artist ?? "—"}</div>
+                    {s.artist && <div className="fg-attr fg-only truncate text-xs">{s.artist}</div>}
                     <div className={"dark-only text-xs " + (selected ? "text-sky-100" : "text-slate-400")}>
-                      {effectiveKey(s)}
-                      {s.choRaw ? "" : " · lyrics only"}
+                      {s.choRaw ? effectiveKey(s) : "lyrics"}
                       {s.lyrics ? "" : " · chart only"}
                     </div>
                   </span>
                 </button>
                 <div className="flex shrink-0 items-center gap-2 pr-2">
-                  <span className="fg-keytag fg-only">{effectiveKey(s)}</span>
+                  {s.choRaw ? (
+                    <span className="fg-keytag fg-only">{effectiveKey(s)}</span>
+                  ) : (
+                    <span className="fg-attr fg-only text-[10px] uppercase tracking-wider opacity-60">lyrics</span>
+                  )}
                   <button
                     onClick={() => onAddToSet(s.id)}
                     title="Add to setlist"
