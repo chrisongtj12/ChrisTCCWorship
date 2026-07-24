@@ -79,6 +79,32 @@ export const ROSTER: Service[] = [
       { role: "Response", songId: "rejoice" },
     ],
   },
+  {
+    date: "2026-08-02",
+    display: "Sunday 2 August",
+    theme: null,
+    leader: "Chris",
+    entries: [
+      { role: "Opening Song", songId: "my-hope-is-built-on-nothing-less" },
+      { role: "Song 2", songId: "alas-and-did-my-savior-bleed" },
+      { role: "Kids' Song", songId: "when-i-survey-the-wondrous-cross" },
+      { role: "Pre-Sermon", songId: "all-sufficient-merit" },
+      { role: "Response", songId: "jesus-when-you-died" },
+    ],
+  },
+  {
+    date: "2026-08-09",
+    display: "Sunday 9 August",
+    theme: null,
+    leader: "Chris",
+    entries: [
+      { role: "Opening Song", songId: "all-sufficient-merit" },
+      { role: "Song 2", songId: "my-hope-is-built-on-nothing-less" },
+      { role: "Kids' Song", songId: "amazing-grace-hymn" },
+      { role: "Pre-Sermon", songId: "o-great-god" },
+      { role: "Response", songId: "jesus-when-you-died" },
+    ],
+  },
 ];
 
 // Build a shareable/playable Setlist from a service. Per-song key precedence:
