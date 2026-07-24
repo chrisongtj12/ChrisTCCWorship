@@ -80,29 +80,34 @@ export const ROSTER: Service[] = [
     ],
   },
   {
+    // Keys + roles per Service Planning 2026 / Song Choosing.xlsx (worship team).
     date: "2026-08-02",
     display: "Sunday 2 August",
-    theme: null,
+    theme: "Limited Atonement",
     leader: "Chris",
     entries: [
-      { role: "Opening Song", songId: "my-hope-is-built-on-nothing-less" },
-      { role: "Song 2", songId: "alas-and-did-my-savior-bleed" },
-      { role: "Kids' Song", songId: "when-i-survey-the-wondrous-cross" },
-      { role: "Pre-Sermon", songId: "all-sufficient-merit" },
-      { role: "Response", songId: "jesus-when-you-died" },
+      // My Hope: team key D (chart written F → transpose −3). Can modulate to E.
+      { role: "Opening Song", songId: "my-hope-is-built-on-nothing-less", transpose: -3 },
+      // Alas: no team key (G). Playing note from planning sheet:
+      { role: "Song 2", songId: "alas-and-did-my-savior-bleed", cue: "Play standard — skip the elaborate 3:15 transition & minor-key last chorus; straight into repeat chorus" },
+      // When I Survey: team key E or F; chart is F, keeping F.
+      { role: "Pre-Sermon", songId: "when-i-survey-the-wondrous-cross" },
+      // All Sufficient Merit: team key G/Ab/A (chart written C → transpose −5 = G).
+      { role: "Response", songId: "all-sufficient-merit", transpose: -5 },
+      { role: "Kids' Song", songId: "jesus-when-you-died" },
     ],
   },
   {
     date: "2026-08-09",
     display: "Sunday 9 August",
-    theme: null,
+    theme: "Irresistible Grace",
     leader: "Chris",
     entries: [
-      { role: "Opening Song", songId: "all-sufficient-merit" },
-      { role: "Song 2", songId: "my-hope-is-built-on-nothing-less" },
-      { role: "Kids' Song", songId: "amazing-grace-hymn" },
-      { role: "Pre-Sermon", songId: "o-great-god" },
-      { role: "Response", songId: "jesus-when-you-died" },
+      { role: "Opening Song", songId: "all-sufficient-merit", transpose: -5 }, // G
+      { role: "Song 2", songId: "my-hope-is-built-on-nothing-less", transpose: -3 }, // D
+      { role: "Pre-Sermon", songId: "amazing-grace-hymn" }, // no team key (G)
+      { role: "Response", songId: "o-great-god" }, // no team key (C)
+      { role: "Kids' Song", songId: "jesus-when-you-died" },
     ],
   },
 ];
