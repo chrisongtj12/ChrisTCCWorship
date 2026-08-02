@@ -86,8 +86,8 @@ export const ROSTER: Service[] = [
     theme: "Limited Atonement",
     leader: "Chris",
     entries: [
-      // My Hope: team key D (chart written F → transpose −3). Can modulate to E.
-      { role: "Opening Song", songId: "my-hope-is-built-on-nothing-less", transpose: -3 },
+      // My Hope: Emu arr. (CCLI 7189243), chart now written in D (team key) → transpose 0.
+      { role: "Opening Song", songId: "my-hope-is-built-on-nothing-less", transpose: 0 },
       // Alas: no team key (G). Playing note from planning sheet:
       { role: "Song 2", songId: "alas-and-did-my-savior-bleed", cue: "Play standard — skip the elaborate 3:15 transition & minor-key last chorus; straight into repeat chorus" },
       // When I Survey: team key E or F; chart is F, keeping F.
@@ -104,7 +104,7 @@ export const ROSTER: Service[] = [
     leader: "Chris",
     entries: [
       { role: "Opening Song", songId: "all-sufficient-merit", transpose: -5 }, // G
-      { role: "Song 2", songId: "my-hope-is-built-on-nothing-less", transpose: -3 }, // D
+      { role: "Song 2", songId: "my-hope-is-built-on-nothing-less", transpose: 0 }, // D (Emu arr., chart in D)
       { role: "Pre-Sermon", songId: "amazing-grace-hymn" }, // no team key (G)
       { role: "Response", songId: "o-great-god" }, // no team key (C)
       { role: "Kids' Song", songId: "jesus-when-you-died" },
