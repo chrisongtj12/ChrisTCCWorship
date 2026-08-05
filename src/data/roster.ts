@@ -113,7 +113,11 @@ export const ROSTER: Service[] = [
       },
       { role: "Pre-Sermon", songId: "amazing-grace-hymn", transpose: 7 }, // D (chart in G → +7)
       { role: "Response", songId: "o-great-god" }, // no team key (C)
-      { role: "Kids' Song", songId: "jesus-when-you-died" },
+      {
+        role: "Kids' Song",
+        songId: "jesus-when-you-died",
+        flow: ["Verse 1", "Chorus", "Verse 2", "Chorus", "Verse 3", "Chorus"],
+      },
     ],
   },
 ];
