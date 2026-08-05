@@ -104,7 +104,13 @@ export const ROSTER: Service[] = [
     leader: "Chris",
     entries: [
       { role: "Opening Song", songId: "all-sufficient-merit", transpose: -5 }, // G
-      { role: "Song 2", songId: "my-hope-is-built-on-nothing-less", transpose: 0 }, // D (Emu arr., chart in D)
+      {
+        role: "Song 2",
+        songId: "my-hope-is-built-on-nothing-less",
+        transpose: 0, // D (Emu arr., chart in D)
+        // Chorus after every verse; last chorus is the written-out one.
+        flow: ["Intro", "Verse 1", "Chorus", "Verse 2", "Chorus", "Verse 3", "Chorus", "Verse 4", "Last Chorus"],
+      },
       { role: "Pre-Sermon", songId: "amazing-grace-hymn", transpose: 7 }, // D (chart in G → +7)
       { role: "Response", songId: "o-great-god" }, // no team key (C)
       { role: "Kids' Song", songId: "jesus-when-you-died" },
