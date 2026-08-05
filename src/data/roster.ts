@@ -105,7 +105,7 @@ export const ROSTER: Service[] = [
     entries: [
       { role: "Opening Song", songId: "all-sufficient-merit", transpose: -5 }, // G
       { role: "Song 2", songId: "my-hope-is-built-on-nothing-less", transpose: 0 }, // D (Emu arr., chart in D)
-      { role: "Pre-Sermon", songId: "amazing-grace-hymn", transpose: 5 }, // C (chart in G → +5)
+      { role: "Pre-Sermon", songId: "amazing-grace-hymn", transpose: 7 }, // D (chart in G → +7)
       { role: "Response", songId: "o-great-god" }, // no team key (C)
       { role: "Kids' Song", songId: "jesus-when-you-died" },
     ],
