@@ -10,13 +10,16 @@ HTML_PRINT   = "/tmp/tcc_9aug_print.html"
 PAGE_W = 710
 PAGE_H = 956
 
-# service order: (file, role, playing key, transpose semitones, columns)
+# service order: (file, role, playing key, transpose semitones, columns, song order)
+# Keys/transposes and the song orders mirror the 9 Aug entries in src/data/roster.ts.
 SET = [
-    ("All Sufficient Merit.cho",              "Opening Song", "G", -5, 2),
-    ("My Hope Is Built On Nothing Less.cho",  "Song 2",       "D",  0, 1),
-    ("Amazing Grace.cho",                     "Pre-Sermon",   "C",  5, 2),
-    ("O Great God.cho",                       "Response",     "C",  0, 2),
-    ("Jesus When You Died.cho",               "Kids' Song",   "G",  0, 2),
+    ("All Sufficient Merit.cho",              "Opening Song", "G", -5, 2, []),
+    ("My Hope Is Built On Nothing Less.cho",  "Song 2",       "D",  0, 2,
+     ["Intro", "Verse 1", "Chorus", "Verse 2", "Chorus", "Verse 3", "Chorus", "Verse 4", "Last Chorus"]),
+    ("Amazing Grace.cho",                     "Pre-Sermon",   "D",  7, 2, []),
+    ("O Great God.cho",                       "Response",     "C",  0, 2, []),
+    ("Jesus When You Died.cho",               "Kids' Song",   "G",  0, 2,
+     ["Verse 1", "Chorus", "Verse 2", "Chorus", "Verse 3", "Chorus"]),
 ]
 
 SHARP = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']
@@ -48,7 +51,7 @@ def parse_line(line, semi):
     if cur is not None: segs.append((cur, ''))
     return [(tp_chord(c, semi), t) for c, t in segs]
 
-def render_song(idx, path, role, key, semi, scale, ncols):
+def render_song(idx, path, role, key, semi, scale, ncols, order):
     raw = open(path, encoding="utf-8").read()
     meta, sections, cur = {}, [], None
     for line in raw.splitlines():
@@ -85,6 +88,10 @@ def render_song(idx, path, role, key, semi, scale, ncols):
     h.append(f'<h1>{html.escape(title)}</h1>')
     if sub: h.append(f'<div class="sub">{html.escape(sub)}</div>')
     h.append(f'<div class="meta">{" &nbsp;&middot;&nbsp; ".join(bits)}</div>')
+    if order:
+        arrow = ' <span class="arw">&rarr;</span> '
+        h.append('<div class="order"><span class="ol">Order</span>'
+                 + arrow.join(html.escape(x) for x in order) + '</div>')
     h.append(f'<div class="inner" style="transform:scale({scale});column-count:{ncols}">')
     for sec in sections:
         h.append('<div class="sec">')
@@ -104,6 +111,25 @@ def render_song(idx, path, role, key, semi, scale, ncols):
         h.append('</div>')
     h.append('</div></section>')
     return "\n".join(h)
+
+FIT_JS = f"""<script>
+// Shrink-to-fit: widen .inner by 1/scale so the scaled result still fills the
+// page width, then binary-search the largest scale whose content fits PAGE_H.
+for (const song of document.querySelectorAll('.song')) {{
+  const inner = song.querySelector('.inner');
+  // offsetTop is document-relative, so subtract the song's own top.
+  const avail = {PAGE_H} - (inner.offsetTop - song.offsetTop) - 4;
+  let lo = 0.35, hi = 1.0, best = lo;
+  for (let i = 0; i < 14; i++) {{
+    const mid = (lo + hi) / 2;
+    inner.style.width = ({PAGE_W} / mid) + 'px';
+    inner.style.transform = 'scale(' + mid + ')';
+    if (inner.scrollHeight * mid <= avail) {{ best = mid; lo = mid; }} else {{ hi = mid; }}
+  }}
+  inner.style.width = ({PAGE_W} / best) + 'px';
+  inner.style.transform = 'scale(' + best + ')';
+}}
+</script>"""
 
 def css(measure):
     box = ("" if measure else
@@ -128,13 +154,17 @@ h1 {{ font-size:26px; margin:2px 0; line-height:1.05; }}
 .seg.hc .ch {{ padding-right:7px; }}
 .seg .ly {{ display:block; font:400 15.5px/1.25 -apple-system,"Helvetica Neue",Arial,sans-serif; }}
 .gap {{ height:9px; }}
+.order {{ font-size:12px; color:#374151; margin:-6px 0 10px; }}
+.order .ol {{ font-weight:700; text-transform:uppercase; letter-spacing:.1em; font-size:10px; color:#6b7280; margin-right:8px; }}
+.order .arw {{ color:#9ca3af; padding:0 2px; }}
 """
 
 def build(scales, measure):
-    body = "\n".join(render_song(i, os.path.join(SONGS_DIR, f), r, k, s, scales[i], cols)
-                     for i, (f, r, k, s, cols) in enumerate(SET))
+    body = "\n".join(render_song(i, os.path.join(SONGS_DIR, f), r, k, s, scales[i], cols, order)
+                     for i, (f, r, k, s, cols, order) in enumerate(SET))
+    fit = "" if measure else FIT_JS
     return (f'<!doctype html><html><head><meta charset="utf-8">'
-            f'<style>{css(measure)}</style></head><body>{body}</body></html>')
+            f'<style>{css(measure)}</style></head><body>{body}{fit}</body></html>')
 
 if __name__ == "__main__":
     jsonarg = next((a for a in sys.argv[1:] if a.startswith("[")), None)
