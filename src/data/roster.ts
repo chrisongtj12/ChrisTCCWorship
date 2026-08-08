@@ -103,7 +103,13 @@ export const ROSTER: Service[] = [
     theme: "Irresistible Grace",
     leader: "Chris",
     entries: [
-      { role: "Opening Song", songId: "all-sufficient-merit", transpose: -5 }, // G
+      {
+        role: "Opening Song",
+        songId: "all-sufficient-merit",
+        transpose: -5, // G
+        // Chorus 2x after V3, then instrumental → V4 → chorus 2x → tag.
+        flow: ["Intro", "Verse 1", "Verse 2", "Chorus", "Verse 3", "Chorus", "Chorus", "Instrumental", "Verse 4", "Chorus", "Chorus", "Tag"],
+      },
       {
         role: "Song 2",
         songId: "my-hope-is-built-on-nothing-less",
